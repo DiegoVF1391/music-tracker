@@ -3,7 +3,8 @@
 {% block content %}
 <h1 class="mb-3">🎵 Canciones</h1>
 <a href="/songs/add" class="btn btn-primary mb-3">+ Nueva canción</a>
-<table class="table table-dark table-striped">
+<div class="table-responsive">
+  <table class="table table-dark table-striped">
   <thead>
     <tr>
       <th>¿Entra?</th>
@@ -18,27 +19,153 @@
       <th>URL</th>
       <th>Fecha Terminar</th>
       <th>Fecha de Lanzamiento</th>
-      <th></th>
+      <th>Acciones</th>
     </tr>
   </thead>
   <tbody>
     {% for song in songs %}
       <tr>
-        <td><input type="checkbox" name="select" {% if song.in_album %}checked{% endif %}></td>
-        <td>{{ song.name }}</td>
-        <td>{{ song.project_name }}</td>
-        <td>{{ song.genre }}</td>
-        <td>{{ song.artists.name if song.artists else '' }}</td>
-        <td>{{ song.albums.name if song.albums else '' }}</td>
-        <td>{{ song.status }}</td>
-        <td>{{ song.rating }}</td>
-        <td>{{ song.path }}</td>
-        <td>{{ song.url }}</td>
-        <td>{{ song.due_date }}</td>
-        <td>{{ song.release_date }}</td>
-        <td><a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm">Eliminar</a></td>
+        <td><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
+        <td class="col-name">{{ song.name }}</td>
+        <td class="col-project">{{ song.project_name }}</td>
+        <td class="col-genre">{{ song.genre }}</td>
+        <td class="col-artist">{{ song.artists.name if song.artists else '' }}</td>
+        <td class="col-album">{{ song.albums.name if song.albums else '' }}</td>
+        <td class="col-status">{{ song.status }}</td>
+        <td class="col-rating">{{ song.rating }}</td>
+        <td class="col-path">{{ song.path }}</td>
+        <td class="col-url">{{ song.url }}</td>
+        <td class="col-due_date">{{ song.due_date }}</td>
+        <td class="col-release_date">{{ song.release_date }}</td>
+        <td class="col-actions">
+          <button type="button" class="btn btn-sm btn-secondary btn-edit">Editar</button>
+          <button type="button" class="btn btn-sm btn-success btn-save d-none">Guardar</button>
+          <button type="button" class="btn btn-sm btn-warning btn-cancel d-none">Cancelar</button>
+          <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1">Eliminar</a>
+        </td>
       </tr>
     {% endfor %}
   </tbody>
-</table>
+  </table>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  function toInput(cell, type){
+    const val = cell.textContent.trim();
+    let input = document.createElement('input');
+    input.className = 'form-control form-control-sm';
+    if(type === 'number'){
+      input.type = 'number';
+      input.value = val || '';
+    } else if(type === 'date'){
+      input.type = 'date';
+      // try to parse date-like values
+      input.value = val ? val : '';
+    } else {
+      input.type = 'text';
+      input.value = val || '';
+    }
+    return input;
+  }
+
+  function enterEdit(row){
+    // prevent double
+    if(row.dataset.editing === '1') return;
+    row.dataset.editing = '1';
+    // store originals
+    row._originals = [];
+    // cells mapping (skip checkbox at 0 and actions at last)
+    const types = {1:'text',2:'text',3:'text',4:'text',5:'text',6:'text',7:'number',8:'text',9:'text',10:'date',11:'date'};
+    for(let i=1;i<=11;i++){
+      const cell = row.cells[i];
+      row._originals.push(cell.innerHTML);
+      const input = toInput(cell, types[i]);
+      cell.innerHTML = '';
+      cell.appendChild(input);
+    }
+    // toggle buttons
+    row.querySelector('.btn-edit').classList.add('d-none');
+    row.querySelector('.btn-save').classList.remove('d-none');
+    row.querySelector('.btn-cancel').classList.remove('d-none');
+  }
+
+  function cancelEdit(row){
+    if(!row.dataset.editing) return;
+    // restore
+    for(let i=1;i<=11;i++){
+      const cell = row.cells[i];
+      cell.innerHTML = row._originals[i-1];
+    }
+    row.removeAttribute('data-editing');
+    row._originals = null;
+    row.querySelector('.btn-edit').classList.remove('d-none');
+    row.querySelector('.btn-save').classList.add('d-none');
+    row.querySelector('.btn-cancel').classList.add('d-none');
+  }
+
+  async function saveEdit(row){
+    const id = row.querySelector('input[type="checkbox"]').value;
+    const data = {};
+    // in_album from checkbox at cell 0
+    data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
+    // collect from inputs
+    const keys = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+    for(let i=1;i<=11;i++){
+      const cell = row.cells[i];
+      const input = cell.querySelector('input');
+      data[keys[i-1]] = input ? input.value : '';
+    }
+
+    // disable buttons
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    saveBtn.disabled = true; cancelBtn.disabled = true;
+
+    try{
+      const res = await fetch('/songs/edit/' + id, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      if(!res.ok){
+        const text = await res.text();
+        alert('Error al guardar: ' + res.status + '\n' + text);
+        saveBtn.disabled = false; cancelBtn.disabled = false;
+        return;
+      }
+      // on success, update the cells to new values
+      const keysMap = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+      for(let i=1;i<=11;i++){
+        const cell = row.cells[i];
+        const val = data[keysMap[i-1]];
+        cell.textContent = val;
+      }
+      row.removeAttribute('data-editing');
+      row._originals = null;
+      row.querySelector('.btn-edit').classList.remove('d-none');
+      row.querySelector('.btn-save').classList.add('d-none');
+      row.querySelector('.btn-cancel').classList.add('d-none');
+    }catch(err){
+      alert('Error al conectar: ' + err);
+      saveBtn.disabled = false; cancelBtn.disabled = false;
+    }
+  }
+
+  // attach events
+  document.querySelectorAll('table tbody tr').forEach(function(row){
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    if(editBtn){
+      editBtn.addEventListener('click', function(){ enterEdit(row); });
+    }
+    if(cancelBtn){
+      cancelBtn.addEventListener('click', function(){ cancelEdit(row); });
+    }
+    if(saveBtn){
+      saveBtn.addEventListener('click', function(){ saveEdit(row); });
+    }
+  });
+});
+</script>
 {% endblock %}

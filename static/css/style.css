@@ -1,0 +1,22 @@
+/* Custom styles for table responsiveness and scrollbar */
+.table-responsive {
+  /* allow horizontal scrolling when needed */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* reserve space for scrollbar to avoid layout shift when it appears */
+  scrollbar-gutter: stable;
+}
+
+/* Optional: style the horizontal scrollbar for WebKit browsers */
+.table-responsive::-webkit-scrollbar {
+  height: 10px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.12);
+  border-radius: 5px;
+}
+
+/* Make sure table cells don't wrap unexpectedly */
+.table td, .table th {
+  white-space: nowrap;
+}
