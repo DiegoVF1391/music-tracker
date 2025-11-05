@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Canciones{% endblock %}
+{% block content %}
+<h1 class="mb-3">🎵 Canciones</h1>
+<a href="/songs/add" class="btn btn-primary mb-3">+ Nueva canción</a>
+<table class="table table-dark table-striped">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Proyecto</th>
+      <th>Género</th>
+      <th>Artista</th>
+      <th>Álbum</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for song in songs %}
+      <tr>
+        <td>{{ song.name }}</td>
+        <td>{{ song.project_name }}</td>
+        <td>{{ song.genre }}</td>
+        <td>{{ song.artists.name if song.artists else '' }}</td>
+        <td>{{ song.albums.name if song.albums else '' }}</td>
+        <td>{{ song.status }}</td>
+        <td><a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm">Eliminar</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
