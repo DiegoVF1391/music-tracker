@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -8,18 +8,21 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configuración de Supabase
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY")
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 # ------------------------------
 # Rutas para canciones
 # ------------------------------
 
-@app.route("/")
-@app.route("/songs")
+@app.route("/", methods=["GET"])
+@app.route("/songs", methods=["GET"])
 def list_songs():
     songs = supabase.table("songs").select("*, artists(name), albums(name)").execute()
+    # Imprimir los datos en la consola del servidor
+    #print("=== Canciones obtenidas de Supabase ===")
+    #print(songs.data)  # Esto mostrará una lista de diccionarios con la información
     return render_template("songs/list.html", songs=songs.data)
 
 @app.route("/songs/add", methods=["GET", "POST"])
