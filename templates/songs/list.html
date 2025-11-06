@@ -29,8 +29,8 @@
         <td class="col-name">{{ song.name }}</td>
         <td class="col-project">{{ song.project_name }}</td>
         <td class="col-genre">{{ song.genre }}</td>
-        <td class="col-artist">{{ song.artists.name if song.artists else '' }}</td>
-        <td class="col-album">{{ song.albums.name if song.albums else '' }}</td>
+  <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
+  <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
         <td class="col-status">{{ song.status }}</td>
         <td class="col-rating">{{ song.rating }}</td>
         <td class="col-path">{{ song.path }}</td>
@@ -49,6 +49,10 @@
   </table>
 </div>
 <script>
+// embed artists and albums for JS
+const __ARTISTS = {{ artists|tojson }};
+const __ALBUMS = {{ albums|tojson }};
+
 document.addEventListener('DOMContentLoaded', function(){
   function toInput(cell, type){
     const val = cell.textContent.trim();
@@ -61,6 +65,61 @@ document.addEventListener('DOMContentLoaded', function(){
       input.type = 'date';
       // try to parse date-like values
       input.value = val ? val : '';
+    } else if(type === 'artist'){
+      // create select populated with artists
+      const select = document.createElement('select');
+      select.className = 'form-select form-select-sm';
+      const currentId = cell.getAttribute('data-artist-id') || '';
+      // empty option
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      __ARTISTS.forEach(function(a){
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.name;
+        if(String(a.id) === String(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      // if current name not in list, add a 'create new' option
+      if(currentId === ''){
+        const currentName = val;
+        if(currentName){
+          const createOpt = document.createElement('option');
+          createOpt.value = 'new:' + currentName;
+          createOpt.textContent = 'Crear: ' + currentName;
+          createOpt.selected = true;
+          select.appendChild(createOpt);
+        }
+      }
+      return select;
+    } else if(type === 'album'){
+      const select = document.createElement('select');
+      select.className = 'form-select form-select-sm';
+      const currentId = cell.getAttribute('data-album-id') || '';
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      __ALBUMS.forEach(function(a){
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.name;
+        if(String(a.id) === String(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if(currentId === ''){
+        const currentName = val;
+        if(currentName){
+          const createOpt = document.createElement('option');
+          createOpt.value = 'new:' + currentName;
+          createOpt.textContent = 'Crear: ' + currentName;
+          createOpt.selected = true;
+          select.appendChild(createOpt);
+        }
+      }
+      return select;
     } else {
       input.type = 'text';
       input.value = val || '';
@@ -75,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function(){
     // store originals
     row._originals = [];
     // cells mapping (skip checkbox at 0 and actions at last)
-    const types = {1:'text',2:'text',3:'text',4:'text',5:'text',6:'text',7:'number',8:'text',9:'text',10:'date',11:'date'};
+    const types = {1:'text',2:'text',3:'text',4:'artist',5:'album',6:'text',7:'number',8:'text',9:'text',10:'date',11:'date'};
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       row._originals.push(cell.innerHTML);
@@ -108,11 +167,11 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-    // collect from inputs
-    const keys = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+    // collect from inputs/selects
+    const keys = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
-      const input = cell.querySelector('input');
+      const input = cell.querySelector('input, select');
       data[keys[i-1]] = input ? input.value : '';
     }
 
@@ -134,11 +193,37 @@ document.addEventListener('DOMContentLoaded', function(){
         return;
       }
       // on success, update the cells to new values
-      const keysMap = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+      const keysMap = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
-        const val = data[keysMap[i-1]];
-        cell.textContent = val;
+        const key = keysMap[i-1];
+        const val = data[key];
+        if(key === 'artist_id'){
+          // set text to selected artist name and update data-artist-id
+          const sel = cell.querySelector('select');
+          if(sel){
+            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            const selectedVal = sel.value || '';
+            cell.textContent = selectedText || '';
+            cell.setAttribute('data-artist-id', selectedVal);
+          } else {
+            cell.textContent = val || '';
+            cell.setAttribute('data-artist-id', '');
+          }
+        } else if(key === 'album_id'){
+          const sel = cell.querySelector('select');
+          if(sel){
+            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            const selectedVal = sel.value || '';
+            cell.textContent = selectedText || '';
+            cell.setAttribute('data-album-id', selectedVal);
+          } else {
+            cell.textContent = val || '';
+            cell.setAttribute('data-album-id', '');
+          }
+        } else {
+          cell.textContent = val || '';
+        }
       }
       row.removeAttribute('data-editing');
       row._originals = null;

@@ -20,10 +20,12 @@ supabase: Client = create_client(url, key)
 @app.route("/songs", methods=["GET"])
 def list_songs():
     songs = supabase.table("songs").select("*, artists(name), albums(name)").execute()
+    artists = supabase.table('artists').select('*').execute()
+    albums = supabase.table('albums').select('*').execute()
     # Imprimir los datos en la consola del servidor
     #print("=== Canciones obtenidas de Supabase ===")
     #print(songs.data)  # Esto mostrará una lista de diccionarios con la información
-    return render_template("songs/list.html", songs=songs.data)
+    return render_template("songs/list.html", songs=songs.data, artists=artists.data, albums=albums.data)
 
 @app.route("/songs/add", methods=["GET", "POST"])
 def add_song():
@@ -100,8 +102,25 @@ def edit_song(song_id):
             except Exception:
                 update_data['in_album'] = 1 if bool(val) else 0
 
-    # resolve artist name -> artist_id
-    if 'artist' in data:
+    # Artist ID handling: prefer explicit artist_id, allow special 'new:<name>' token to create
+    if 'artist_id' in data:
+        a_val = data.get('artist_id')
+        if not a_val:
+            update_data['artist_id'] = None
+        else:
+            a_str = str(a_val)
+            if a_str.startswith('new:'):
+                artist_name = a_str.split(':', 1)[1]
+                ins = supabase.table('artists').insert({'name': artist_name}).execute()
+                ins_data = getattr(ins, 'data', None)
+                update_data['artist_id'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+            else:
+                try:
+                    update_data['artist_id'] = int(a_val)
+                except Exception:
+                    update_data['artist_id'] = None
+    # fallback: resolve artist name -> artist_id
+    elif 'artist' in data:
         artist_name = data.get('artist')
         if not artist_name:
             update_data['artist_id'] = None
@@ -111,11 +130,33 @@ def edit_song(song_id):
             if artist_rows:
                 update_data['artist_id'] = artist_rows[0].get('id')
             else:
-                # leave as None if not found (do not auto-create)
-                update_data['artist_id'] = None
+                # create the artist if not found
+                ins = supabase.table('artists').insert({'name': artist_name}).execute()
+                ins_data = getattr(ins, 'data', None)
+                if ins_data and len(ins_data) > 0:
+                    update_data['artist_id'] = ins_data[0].get('id')
+                else:
+                    update_data['artist_id'] = None
 
-    # resolve album name -> album_id
-    if 'album' in data:
+    # Album ID handling: prefer explicit album_id, allow 'new:<name>' token to create
+    if 'album_id' in data:
+        al_val = data.get('album_id')
+        if not al_val:
+            update_data['album_id'] = None
+        else:
+            al_str = str(al_val)
+            if al_str.startswith('new:'):
+                album_name = al_str.split(':', 1)[1]
+                ins = supabase.table('albums').insert({'name': album_name}).execute()
+                ins_data = getattr(ins, 'data', None)
+                update_data['album_id'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+            else:
+                try:
+                    update_data['album_id'] = int(al_val)
+                except Exception:
+                    update_data['album_id'] = None
+    # fallback: resolve album name -> album_id
+    elif 'album' in data:
         album_name = data.get('album')
         if not album_name:
             update_data['album_id'] = None
