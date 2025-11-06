@@ -29,17 +29,20 @@
         <td class="col-name">{{ song.name }}</td>
         <td class="col-project">{{ song.project_name }}</td>
         <td class="col-genre">{{ song.genre }}</td>
-  <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
-  <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
+        <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
+        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
         <td class="col-status">{{ song.status }}</td>
-        <td class="col-rating">{{ song.rating }}</td>
+        <td class="col-rating">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
         <td class="col-path">{{ song.path }}</td>
         <td class="col-url">{{ song.url }}</td>
         <td class="col-due_date">{{ song.due_date }}</td>
         <td class="col-release_date">{{ song.release_date }}</td>
         <td class="col-actions">
           <button type="button" class="btn btn-sm btn-secondary btn-edit">Editar</button>
-          <button type="button" class="btn btn-sm btn-success btn-save d-none">Guardar</button>
+          <button type="button" class="btn btn-sm btn-success btn-save d-none">
+            <span class="spinner-border spinner-border-sm save-spinner d-none me-1" role="status" aria-hidden="true"></span>
+            <span class="save-text">Guardar</span>
+          </button>
           <button type="button" class="btn btn-sm btn-warning btn-cancel d-none">Cancelar</button>
           <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1">Eliminar</a>
         </td>
@@ -48,12 +51,34 @@
   </tbody>
   </table>
 </div>
+<!-- Toast container -->
+<div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index:1080">
+  <div id="globalToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="globalToastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
 <script>
 // embed artists and albums for JS
-const __ARTISTS = {{ artists|tojson }};
-const __ALBUMS = {{ albums|tojson }};
+const __ARTISTS = {{ artists|tojson|safe }};
+const __ALBUMS = {{ albums|tojson|safe }};
 
 document.addEventListener('DOMContentLoaded', function(){
+  function showToast(message, type='success'){
+    const toastEl = document.getElementById('globalToast');
+    if(!toastEl) return;
+    // normalize type
+    const clsRemove = ['text-bg-success','text-bg-danger','text-bg-warning'];
+    clsRemove.forEach(c => toastEl.classList.remove(c));
+    const cls = type === 'success' ? 'text-bg-success' : (type === 'error' ? 'text-bg-danger' : 'text-bg-warning');
+    toastEl.classList.add(cls);
+    toastEl.querySelector('.toast-body').textContent = message;
+    const bsToast = new bootstrap.Toast(toastEl);
+    bsToast.show();
+  }
+
   function toInput(cell, type){
     const val = cell.textContent.trim();
     let input = document.createElement('input');
@@ -65,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function(){
       input.type = 'date';
       // try to parse date-like values
       input.value = val ? val : '';
-    } else if(type === 'artist'){
+  } else if(type === 'artist'){
       // create select populated with artists
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
@@ -94,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       }
       return select;
-    } else if(type === 'album'){
+  } else if(type === 'album'){
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
       const currentId = cell.getAttribute('data-album-id') || '';
@@ -120,6 +145,39 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       }
       return select;
+    } else if(type === 'status'){
+      const select = document.createElement('select');
+      select.className = 'form-select form-select-sm';
+      const options = ['idea','producción','falta letra','grabar voz','mezcla','masterización','terminada','en plataformas'];
+      const current = val || '';
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      options.forEach(function(optVal){
+        const opt = document.createElement('option');
+        opt.value = optVal;
+        opt.textContent = optVal;
+        if(optVal === current) opt.selected = true;
+        select.appendChild(opt);
+      });
+      return select;
+    } else if(type === 'rating'){
+      const select = document.createElement('select');
+      select.className = 'form-select form-select-sm';
+      const cur = parseInt(val) || 0;
+      /*const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(sin rating)';
+      select.appendChild(emptyOpt);*/
+      for(let r=1;r<=5;r++){
+        const opt = document.createElement('option');
+        opt.value = String(r);
+        opt.textContent = '⭐'.repeat(r) + ' (' + r + ')';
+        if(r === cur) opt.selected = true;
+        select.appendChild(opt);
+      }
+      return select;
     } else {
       input.type = 'text';
       input.value = val || '';
@@ -133,8 +191,8 @@ document.addEventListener('DOMContentLoaded', function(){
     row.dataset.editing = '1';
     // store originals
     row._originals = [];
-    // cells mapping (skip checkbox at 0 and actions at last)
-    const types = {1:'text',2:'text',3:'text',4:'artist',5:'album',6:'text',7:'number',8:'text',9:'text',10:'date',11:'date'};
+  // cells mapping (skip checkbox at 0 and actions at last)
+  const types = {1:'text',2:'text',3:'text',4:'artist',5:'album',6:'status',7:'rating',8:'text',9:'text',10:'date',11:'date'};
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       row._originals.push(cell.innerHTML);
@@ -143,9 +201,15 @@ document.addEventListener('DOMContentLoaded', function(){
       cell.appendChild(input);
     }
     // toggle buttons
-    row.querySelector('.btn-edit').classList.add('d-none');
-    row.querySelector('.btn-save').classList.remove('d-none');
-    row.querySelector('.btn-cancel').classList.remove('d-none');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    editBtn.classList.add('d-none');
+    saveBtn.classList.remove('d-none');
+    cancelBtn.classList.remove('d-none');
+    // ensure buttons are enabled (they may have been left disabled)
+    if(saveBtn) saveBtn.disabled = false;
+    if(cancelBtn) cancelBtn.disabled = false;
   }
 
   function cancelEdit(row){
@@ -157,9 +221,12 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     row.removeAttribute('data-editing');
     row._originals = null;
-    row.querySelector('.btn-edit').classList.remove('d-none');
-    row.querySelector('.btn-save').classList.add('d-none');
-    row.querySelector('.btn-cancel').classList.add('d-none');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    if(editBtn) editBtn.classList.remove('d-none');
+    if(saveBtn) { saveBtn.classList.add('d-none'); saveBtn.disabled = false; }
+    if(cancelBtn) { cancelBtn.classList.add('d-none'); cancelBtn.disabled = false; }
   }
 
   async function saveEdit(row){
@@ -175,10 +242,11 @@ document.addEventListener('DOMContentLoaded', function(){
       data[keys[i-1]] = input ? input.value : '';
     }
 
-    // disable buttons
-    const saveBtn = row.querySelector('.btn-save');
-    const cancelBtn = row.querySelector('.btn-cancel');
-    saveBtn.disabled = true; cancelBtn.disabled = true;
+  // disable buttons and show spinner
+  const saveBtn = row.querySelector('.btn-save');
+  const cancelBtn = row.querySelector('.btn-cancel');
+  if(saveBtn) { saveBtn.disabled = true; const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.remove('d-none'); }
+  if(cancelBtn) cancelBtn.disabled = true;
 
     try{
       const res = await fetch('/songs/edit/' + id, {
@@ -188,11 +256,13 @@ document.addEventListener('DOMContentLoaded', function(){
       });
       if(!res.ok){
         const text = await res.text();
-        alert('Error al guardar: ' + res.status + '\n' + text);
+        // hide spinner
+        if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); }
+        showToast('Error al guardar: ' + res.status + ' - ' + text, 'error');
         saveBtn.disabled = false; cancelBtn.disabled = false;
         return;
       }
-      // on success, update the cells to new values
+  // on success, update the cells to new values
       const keysMap = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
@@ -221,17 +291,29 @@ document.addEventListener('DOMContentLoaded', function(){
             cell.textContent = val || '';
             cell.setAttribute('data-album-id', '');
           }
+        } else if(key === 'rating'){
+          // display stars for rating
+          const ratingVal = parseInt(data['rating']) || 0;
+          cell.textContent = ratingVal > 0 ? '⭐'.repeat(ratingVal) : '';
         } else {
           cell.textContent = val || '';
         }
-      }
-      row.removeAttribute('data-editing');
-      row._originals = null;
-      row.querySelector('.btn-edit').classList.remove('d-none');
-      row.querySelector('.btn-save').classList.add('d-none');
-      row.querySelector('.btn-cancel').classList.add('d-none');
+  }
+  // re-enable buttons (in case they were disabled) and switch UI back
+  const editBtn = row.querySelector('.btn-edit');
+  const saveBtn = row.querySelector('.btn-save');
+  const cancelBtn = row.querySelector('.btn-cancel');
+  if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); saveBtn.disabled = false; }
+  if(cancelBtn) cancelBtn.disabled = false;
+  showToast('Guardado correctamente', 'success');
+  row.removeAttribute('data-editing');
+  row._originals = null;
+  if(editBtn) editBtn.classList.remove('d-none');
+  if(saveBtn) saveBtn.classList.add('d-none');
+  if(cancelBtn) cancelBtn.classList.add('d-none');
     }catch(err){
-      alert('Error al conectar: ' + err);
+      if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); }
+      showToast('Error al conectar: ' + err, 'error');
       saveBtn.disabled = false; cancelBtn.disabled = false;
     }
   }
