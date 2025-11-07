@@ -19,14 +19,15 @@ supabase: Client = create_client(url, key)
 @app.route("/", methods=["GET"])
 @app.route("/songs", methods=["GET"])
 def list_songs():
-    songs = supabase.table("songs").select("*, artists(name), albums(name), song_statuses(name)").execute()
+    songs = supabase.table("songs").select("*, artists(name), albums(name), song_statuses(name), genres(name)").execute()
     artists = supabase.table('artists').select('*').execute()
     albums = supabase.table('albums').select('*').execute()
     song_statuses = supabase.table('song_statuses').select('*').execute()
+    genres = supabase.table('genres').select('*').execute()
     # Imprimir los datos en la consola del servidor
     #print("=== Canciones obtenidas de Supabase ===")
     #print(songs.data)  # Esto mostrará una lista de diccionarios con la información
-    return render_template("songs/list.html", songs=songs.data, artists=artists.data, albums=albums.data, song_statuses=song_statuses.data)
+    return render_template("songs/list.html", songs=songs.data, artists=artists.data, albums=albums.data, song_statuses=song_statuses.data, genres=genres.data)
 
 @app.route("/songs/add", methods=["GET", "POST"])
 def add_song():
@@ -36,9 +37,10 @@ def add_song():
             "project_name": request.form["project_name"],
             "path": request.form["path"],
             "genre": request.form["genre"],
-            # prefer status_id (FK) if provided, otherwise accept legacy status string
-            "status_id": request.form.get("status_id") if request.form.get("status_id") else None,
-            "status": request.form.get("status") if not request.form.get("status_id") else None,
+            "genre": request.form.get("genre") if request.form.get("genre") else None,
+            # prefer status (FK) if provided, otherwise accept legacy status string
+            "status": request.form.get("status") if request.form.get("status") else None,
+            "status": request.form.get("status") if not request.form.get("status") else None,
             "url": request.form.get("url"),
             "album_id": request.form.get("album_id"),
             "rating": request.form.get("rating"),
@@ -77,7 +79,7 @@ def edit_song(song_id):
 
     update_data = {}
 
-    # simple string fields (leave status to status_id when provided)
+    # simple string fields (leave status to status when provided)
     for field in ['name', 'project_name', 'genre', 'path', 'url']:
         if field in data:
             update_data[field] = data.get(field) or None
@@ -164,6 +166,28 @@ def edit_song(song_id):
         album_name = data.get('album')
         if not album_name:
             update_data['album_id'] = None
+
+    # Genre ID handling: prefer explicit genre, allow 'new:<name>' token to create
+    if 'genre' in data:
+        g_val = data.get('genre')
+        if not g_val:
+            update_data['genre'] = None
+        else:
+            g_str = str(g_val)
+            if g_str.startswith('new:'):
+                genre_name = g_str.split(':', 1)[1]
+                ins = supabase.table('genres').insert({'name': genre_name}).execute()
+                ins_data = getattr(ins, 'data', None)
+                update_data['genre'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+            else:
+                try:
+                    update_data['genre'] = int(g_val)
+                except Exception:
+                    update_data['genre'] = None
+    # fallback: allow legacy 'genre' string (kept for compatibility)
+    elif 'genre' in data:
+        if data.get('genre'):
+            update_data['genre'] = data.get('genre')
         else:
             album_resp = supabase.table('albums').select('id').eq('name', album_name).limit(1).execute()
             album_rows = getattr(album_resp, 'data', None)
@@ -172,16 +196,16 @@ def edit_song(song_id):
             else:
                 update_data['album_id'] = None
 
-    # Status ID handling: prefer explicit status_id (reference to song_statuses table)
-    if 'status_id' in data:
-        s_val = data.get('status_id')
+    # Status ID handling: prefer explicit status (reference to song_statuses table)
+    if 'status' in data:
+        s_val = data.get('status')
         if not s_val:
-            update_data['status_id'] = None
+            update_data['status'] = None
         else:
             try:
-                update_data['status_id'] = int(s_val)
+                update_data['status'] = int(s_val)
             except Exception:
-                update_data['status_id'] = None
+                update_data['status'] = None
     # fallback: allow old 'status' string field (kept for backward compatibility)
     elif 'status' in data:
         update_data['status'] = data.get('status') or None

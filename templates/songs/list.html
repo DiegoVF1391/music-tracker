@@ -28,7 +28,7 @@
         <td><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
         <td class="col-name">{{ song.name }}</td>
         <td class="col-project">{{ song.project_name }}</td>
-        <td class="col-genre">{{ song.genre }}</td>
+  <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}">{{ song.genres.name if song.genres else (song.genre if song.genre else '') }}</td>
         <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
         <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
         <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">{{ song.song_statuses.name if song.song_statuses else '' }}</td>
@@ -67,6 +67,7 @@
 const __ARTISTS = {{ artists|tojson|safe }};
 const __ALBUMS = {{ albums|tojson|safe }};
 const __STATUS = {{ song_statuses|tojson|safe }};
+const __GENRES = {{ genres|tojson|safe }};
 
 document.addEventListener('DOMContentLoaded', function(){
   function showToast(message, type='success'){
@@ -148,7 +149,33 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       }
       return select;
-    } else if(type === 'status'){
+  } else if(type === 'genre'){
+      const select = document.createElement('select');
+      select.className = 'form-select form-select-sm';
+      const currentId = cell.getAttribute('data-genre-id') || '';
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      __GENRES.forEach(function(g){
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.textContent = g.name;
+        if(String(g.id) === String(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if(currentId === ''){
+        const currentName = val;
+        if(currentName){
+          const createOpt = document.createElement('option');
+          createOpt.value = 'new:' + currentName;
+          createOpt.textContent = 'Crear: ' + currentName;
+          createOpt.selected = true;
+          select.appendChild(createOpt);
+        }
+      }
+      return select;
+  } else if(type === 'status'){
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
       //const options = ['idea','producción','falta letra','grabar voz','mezcla','masterización','terminada','en plataformas'];
@@ -165,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function(){
         select.appendChild(opt);
       });
       return select;
-    } else if(type === 'rating'){
+  } else if(type === 'rating'){
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
       //const cur = parseInt(val) || 0;
@@ -198,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function(){
     // store originals
     row._originals = [];
   // cells mapping (skip checkbox at 0 and actions at last)
-  const types = {1:'text',2:'text',3:'text',4:'artist',5:'album',6:'status',7:'rating',8:'text',9:'text',10:'date',11:'date'};
+  const types = {1:'text',2:'text',3:'genre',4:'artist',5:'album',6:'status',7:'rating',8:'text',9:'text',10:'date',11:'date'};
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       row._originals.push(cell.innerHTML);
@@ -240,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-  // collect from inputs/selects — send status (FK) instead of status string
+  // collect from inputs/selects — send genre and status (FKs)
   const keys = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
@@ -296,6 +323,23 @@ document.addEventListener('DOMContentLoaded', function(){
           } else {
             cell.textContent = val || '';
             cell.setAttribute('data-album-id', '');
+          }
+        } else if(key === 'genre'){
+          const sel = cell.querySelector('select');
+          if(sel){
+            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            const selectedVal = sel.value || '';
+            cell.textContent = selectedText || '';
+            cell.setAttribute('data-genre-id', selectedVal);
+          } else {
+            const genreObj = __GENRES.find(g => String(g.id) === String(val));
+            if(genreObj){
+              cell.textContent = genreObj.name;
+              cell.setAttribute('data-genre-id', genreObj.id);
+            } else {
+              cell.textContent = val || '';
+              cell.setAttribute('data-genre-id', '');
+            }
           }
         } else if(key === 'status'){
           const sel = cell.querySelector('select');
