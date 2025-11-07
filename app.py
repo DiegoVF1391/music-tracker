@@ -19,13 +19,14 @@ supabase: Client = create_client(url, key)
 @app.route("/", methods=["GET"])
 @app.route("/songs", methods=["GET"])
 def list_songs():
-    songs = supabase.table("songs").select("*, artists(name), albums(name)").execute()
+    songs = supabase.table("songs").select("*, artists(name), albums(name), song_statuses(name)").execute()
     artists = supabase.table('artists').select('*').execute()
     albums = supabase.table('albums').select('*').execute()
+    song_statuses = supabase.table('song_statuses').select('*').execute()
     # Imprimir los datos en la consola del servidor
     #print("=== Canciones obtenidas de Supabase ===")
     #print(songs.data)  # Esto mostrará una lista de diccionarios con la información
-    return render_template("songs/list.html", songs=songs.data, artists=artists.data, albums=albums.data)
+    return render_template("songs/list.html", songs=songs.data, artists=artists.data, albums=albums.data, song_statuses=song_statuses.data)
 
 @app.route("/songs/add", methods=["GET", "POST"])
 def add_song():
@@ -35,13 +36,16 @@ def add_song():
             "project_name": request.form["project_name"],
             "path": request.form["path"],
             "genre": request.form["genre"],
-            "status": request.form["status"],
+            # prefer status_id (FK) if provided, otherwise accept legacy status string
+            "status_id": request.form.get("status_id") if request.form.get("status_id") else None,
+            "status": request.form.get("status") if not request.form.get("status_id") else None,
             "url": request.form.get("url"),
             "album_id": request.form.get("album_id"),
             "rating": request.form.get("rating"),
             "artist_id": request.form.get("artist_id"),
             "due_date": request.form.get("due_date"),
             "release_date": request.form.get("release_date"),
+            "in_album": request.form.get("in_album"),
         }
         supabase.table("songs").insert(data).execute()
         return redirect(url_for("list_songs"))
@@ -73,8 +77,8 @@ def edit_song(song_id):
 
     update_data = {}
 
-    # simple string fields
-    for field in ['name', 'project_name', 'genre', 'status', 'path', 'url']:
+    # simple string fields (leave status to status_id when provided)
+    for field in ['name', 'project_name', 'genre', 'path', 'url']:
         if field in data:
             update_data[field] = data.get(field) or None
 
@@ -167,6 +171,20 @@ def edit_song(song_id):
                 update_data['album_id'] = album_rows[0].get('id')
             else:
                 update_data['album_id'] = None
+
+    # Status ID handling: prefer explicit status_id (reference to song_statuses table)
+    if 'status_id' in data:
+        s_val = data.get('status_id')
+        if not s_val:
+            update_data['status_id'] = None
+        else:
+            try:
+                update_data['status_id'] = int(s_val)
+            except Exception:
+                update_data['status_id'] = None
+    # fallback: allow old 'status' string field (kept for backward compatibility)
+    elif 'status' in data:
+        update_data['status'] = data.get('status') or None
 
     if not update_data:
         return jsonify({'error': 'No valid fields to update provided.'}), 400

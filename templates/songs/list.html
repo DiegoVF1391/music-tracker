@@ -31,8 +31,8 @@
         <td class="col-genre">{{ song.genre }}</td>
         <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
         <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
-        <td class="col-status">{{ song.status }}</td>
-        <td class="col-rating">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
+        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">{{ song.song_statuses.name if song.song_statuses else '' }}</td>
+        <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
         <td class="col-path">{{ song.path }}</td>
         <td class="col-url">{{ song.url }}</td>
         <td class="col-due_date">{{ song.due_date }}</td>
@@ -51,6 +51,7 @@
   </tbody>
   </table>
 </div>
+
 <!-- Toast container -->
 <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index:1080">
   <div id="globalToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -60,10 +61,12 @@
     </div>
   </div>
 </div>
+
 <script>
 // embed artists and albums for JS
 const __ARTISTS = {{ artists|tojson|safe }};
 const __ALBUMS = {{ albums|tojson|safe }};
+const __STATUS = {{ song_statuses|tojson|safe }};
 
 document.addEventListener('DOMContentLoaded', function(){
   function showToast(message, type='success'){
@@ -148,24 +151,26 @@ document.addEventListener('DOMContentLoaded', function(){
     } else if(type === 'status'){
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
-      const options = ['idea','producción','falta letra','grabar voz','mezcla','masterización','terminada','en plataformas'];
-      const current = val || '';
+      //const options = ['idea','producción','falta letra','grabar voz','mezcla','masterización','terminada','en plataformas'];
+      const currentId = cell.getAttribute('data-status-id') || '';
       const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
       emptyOpt.textContent = '(ninguno)';
       select.appendChild(emptyOpt);
-      options.forEach(function(optVal){
+      __STATUS.forEach(function(a){
         const opt = document.createElement('option');
-        opt.value = optVal;
-        opt.textContent = optVal;
-        if(optVal === current) opt.selected = true;
+        opt.value = a.id;
+        opt.textContent = a.name;
+        if(String(a.id) === String(currentId)) opt.selected = true;
         select.appendChild(opt);
       });
       return select;
     } else if(type === 'rating'){
       const select = document.createElement('select');
       select.className = 'form-select form-select-sm';
-      const cur = parseInt(val) || 0;
+      //const cur = parseInt(val) || 0;
+      const currentId = cell.getAttribute('data-rating-id') || '';
+      console.log('Current rating id:', currentId);
       /*const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
       emptyOpt.textContent = '(sin rating)';
@@ -173,8 +178,9 @@ document.addEventListener('DOMContentLoaded', function(){
       for(let r=1;r<=5;r++){
         const opt = document.createElement('option');
         opt.value = String(r);
-        opt.textContent = '⭐'.repeat(r) + ' (' + r + ')';
-        if(r === cur) opt.selected = true;
+        opt.textContent = '⭐'.repeat(r);
+        if(r === parseInt(currentId)) opt.selected = true;
+        //if(String(r) === String(currentId)) opt.selected = true;
         select.appendChild(opt);
       }
       return select;
@@ -234,8 +240,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-    // collect from inputs/selects
-    const keys = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
+  // collect from inputs/selects — send status (FK) instead of status string
+  const keys = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       const input = cell.querySelector('input, select');
@@ -263,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function(){
         return;
       }
   // on success, update the cells to new values
-      const keysMap = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
+  const keysMap = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
         const key = keysMap[i-1];
@@ -280,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function(){
             cell.textContent = val || '';
             cell.setAttribute('data-artist-id', '');
           }
-        } else if(key === 'album_id'){
+  } else if(key === 'album_id'){
           const sel = cell.querySelector('select');
           if(sel){
             const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
@@ -290,6 +296,24 @@ document.addEventListener('DOMContentLoaded', function(){
           } else {
             cell.textContent = val || '';
             cell.setAttribute('data-album-id', '');
+          }
+        } else if(key === 'status'){
+          const sel = cell.querySelector('select');
+          if(sel){
+            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            const selectedVal = sel.value || '';
+            cell.textContent = selectedText || '';
+            cell.setAttribute('data-status-id', selectedVal);
+          } else {
+            // fallback: lookup in __STATUS
+            const statusObj = __STATUS.find(s => String(s.id) === String(val));
+            if(statusObj){
+              cell.textContent = statusObj.name;
+              cell.setAttribute('data-status-id', statusObj.id);
+            } else {
+              cell.textContent = val || '';
+              cell.setAttribute('data-status-id', '');
+            }
           }
         } else if(key === 'rating'){
           // display stars for rating
