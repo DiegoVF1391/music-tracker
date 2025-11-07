@@ -78,6 +78,7 @@ def edit_song(song_id):
         data = request.form.to_dict()
 
     update_data = {}
+    created = {}
 
     # simple string fields (leave status to status when provided)
     for field in ['name', 'project_name', 'genre', 'path', 'url']:
@@ -119,7 +120,12 @@ def edit_song(song_id):
                 artist_name = a_str.split(':', 1)[1]
                 ins = supabase.table('artists').insert({'name': artist_name}).execute()
                 ins_data = getattr(ins, 'data', None)
-                update_data['artist_id'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+                if ins_data and len(ins_data) > 0:
+                    update_data['artist_id'] = ins_data[0].get('id')
+                    # return created artist info to client
+                    created['artist'] = {'id': ins_data[0].get('id'), 'name': ins_data[0].get('name') or artist_name}
+                else:
+                    update_data['artist_id'] = None
             else:
                 try:
                     update_data['artist_id'] = int(a_val)
@@ -155,7 +161,11 @@ def edit_song(song_id):
                 album_name = al_str.split(':', 1)[1]
                 ins = supabase.table('albums').insert({'name': album_name}).execute()
                 ins_data = getattr(ins, 'data', None)
-                update_data['album_id'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+                if ins_data and len(ins_data) > 0:
+                    update_data['album_id'] = ins_data[0].get('id')
+                    created['album'] = {'id': ins_data[0].get('id'), 'name': ins_data[0].get('name') or album_name}
+                else:
+                    update_data['album_id'] = None
             else:
                 try:
                     update_data['album_id'] = int(al_val)
@@ -167,9 +177,9 @@ def edit_song(song_id):
         if not album_name:
             update_data['album_id'] = None
 
-    # Genre ID handling: prefer explicit genre, allow 'new:<name>' token to create
-    if 'genre' in data:
-        g_val = data.get('genre')
+    # Genre ID handling: prefer explicit genre_id, allow 'new:<name>' token to create
+    if 'genre_id' in data:
+        g_val = data.get('genre_id')
         if not g_val:
             update_data['genre'] = None
         else:
@@ -178,7 +188,11 @@ def edit_song(song_id):
                 genre_name = g_str.split(':', 1)[1]
                 ins = supabase.table('genres').insert({'name': genre_name}).execute()
                 ins_data = getattr(ins, 'data', None)
-                update_data['genre'] = ins_data[0].get('id') if ins_data and len(ins_data) > 0 else None
+                if ins_data and len(ins_data) > 0:
+                    update_data['genre'] = ins_data[0].get('id')
+                    created['genre'] = {'id': ins_data[0].get('id'), 'name': ins_data[0].get('name') or genre_name}
+                else:
+                    update_data['genre'] = None
             else:
                 try:
                     update_data['genre'] = int(g_val)
@@ -188,13 +202,6 @@ def edit_song(song_id):
     elif 'genre' in data:
         if data.get('genre'):
             update_data['genre'] = data.get('genre')
-        else:
-            album_resp = supabase.table('albums').select('id').eq('name', album_name).limit(1).execute()
-            album_rows = getattr(album_resp, 'data', None)
-            if album_rows:
-                update_data['album_id'] = album_rows[0].get('id')
-            else:
-                update_data['album_id'] = None
 
     # Status ID handling: prefer explicit status (reference to song_statuses table)
     if 'status' in data:
@@ -218,7 +225,10 @@ def edit_song(song_id):
     if getattr(resp, 'error', None):
         return jsonify({'error': str(resp.error)}), 400
 
-    return jsonify({'success': True, 'data': getattr(resp, 'data', None)}), 200
+    result = {'success': True, 'data': getattr(resp, 'data', None)}
+    if created:
+        result['created'] = created
+    return jsonify(result), 200
 
 # ------------------------------
 # Rutas para artistas y álbumes

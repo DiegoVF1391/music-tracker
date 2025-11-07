@@ -85,34 +85,43 @@ document.addEventListener('DOMContentLoaded', function(){
 
   function toInput(cell, type){
     const val = cell.textContent.trim();
-    let input = document.createElement('input');
-    input.className = 'form-control form-control-sm';
+    // number
     if(type === 'number'){
+      const input = document.createElement('input');
       input.type = 'number';
+      input.className = 'form-control';
       input.value = val || '';
-    } else if(type === 'date'){
+      return input;
+    }
+    // date
+    if(type === 'date'){
+      const input = document.createElement('input');
       input.type = 'date';
-      // try to parse date-like values
+      input.className = 'form-control';
       input.value = val ? val : '';
-  } else if(type === 'artist'){
-      // create select populated with artists
-      const select = document.createElement('select');
-      select.className = 'form-select form-select-sm';
-      const currentId = cell.getAttribute('data-artist-id') || '';
-      // empty option
+      return input;
+    }
+    // artist/album/genre -> select + TomSelect
+    if(type === 'artist' || type === 'album' || type === 'genre'){
+  const select = document.createElement('select');
+  select.className = 'form-select ts-select';
+  // mark type so createFilter can decide which list to check
+  select.dataset.tsType = type;
+      const dataAttr = type === 'artist' ? 'data-artist-id' : (type === 'album' ? 'data-album-id' : 'data-genre-id');
+      const currentId = cell.getAttribute(dataAttr) || '';
       const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
       emptyOpt.textContent = '(ninguno)';
       select.appendChild(emptyOpt);
-      __ARTISTS.forEach(function(a){
+      const list = type === 'artist' ? __ARTISTS : (type === 'album' ? __ALBUMS : __GENRES);
+      list.forEach(function(a){
         const opt = document.createElement('option');
         opt.value = a.id;
         opt.textContent = a.name;
         if(String(a.id) === String(currentId)) opt.selected = true;
         select.appendChild(opt);
       });
-      // if current name not in list, add a 'create new' option
-      if(currentId === ''){
+      if(!currentId){
         const currentName = val;
         if(currentName){
           const createOpt = document.createElement('option');
@@ -123,62 +132,11 @@ document.addEventListener('DOMContentLoaded', function(){
         }
       }
       return select;
-  } else if(type === 'album'){
+    }
+    // status
+    if(type === 'status'){
       const select = document.createElement('select');
-      select.className = 'form-select form-select-sm';
-      const currentId = cell.getAttribute('data-album-id') || '';
-      const emptyOpt = document.createElement('option');
-      emptyOpt.value = '';
-      emptyOpt.textContent = '(ninguno)';
-      select.appendChild(emptyOpt);
-      __ALBUMS.forEach(function(a){
-        const opt = document.createElement('option');
-        opt.value = a.id;
-        opt.textContent = a.name;
-        if(String(a.id) === String(currentId)) opt.selected = true;
-        select.appendChild(opt);
-      });
-      if(currentId === ''){
-        const currentName = val;
-        if(currentName){
-          const createOpt = document.createElement('option');
-          createOpt.value = 'new:' + currentName;
-          createOpt.textContent = 'Crear: ' + currentName;
-          createOpt.selected = true;
-          select.appendChild(createOpt);
-        }
-      }
-      return select;
-  } else if(type === 'genre'){
-      const select = document.createElement('select');
-      select.className = 'form-select form-select-sm';
-      const currentId = cell.getAttribute('data-genre-id') || '';
-      const emptyOpt = document.createElement('option');
-      emptyOpt.value = '';
-      emptyOpt.textContent = '(ninguno)';
-      select.appendChild(emptyOpt);
-      __GENRES.forEach(function(g){
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.textContent = g.name;
-        if(String(g.id) === String(currentId)) opt.selected = true;
-        select.appendChild(opt);
-      });
-      if(currentId === ''){
-        const currentName = val;
-        if(currentName){
-          const createOpt = document.createElement('option');
-          createOpt.value = 'new:' + currentName;
-          createOpt.textContent = 'Crear: ' + currentName;
-          createOpt.selected = true;
-          select.appendChild(createOpt);
-        }
-      }
-      return select;
-  } else if(type === 'status'){
-      const select = document.createElement('select');
-      select.className = 'form-select form-select-sm';
-      //const options = ['idea','producción','falta letra','grabar voz','mezcla','masterización','terminada','en plataformas'];
+      select.className = 'form-select';
       const currentId = cell.getAttribute('data-status-id') || '';
       const emptyOpt = document.createElement('option');
       emptyOpt.value = '';
@@ -192,29 +150,26 @@ document.addEventListener('DOMContentLoaded', function(){
         select.appendChild(opt);
       });
       return select;
-  } else if(type === 'rating'){
+    }
+    // rating
+    if(type === 'rating'){
       const select = document.createElement('select');
-      select.className = 'form-select form-select-sm';
-      //const cur = parseInt(val) || 0;
+      select.className = 'form-select';
       const currentId = cell.getAttribute('data-rating-id') || '';
-      console.log('Current rating id:', currentId);
-      /*const emptyOpt = document.createElement('option');
-      emptyOpt.value = '';
-      emptyOpt.textContent = '(sin rating)';
-      select.appendChild(emptyOpt);*/
       for(let r=1;r<=5;r++){
         const opt = document.createElement('option');
         opt.value = String(r);
         opt.textContent = '⭐'.repeat(r);
         if(r === parseInt(currentId)) opt.selected = true;
-        //if(String(r) === String(currentId)) opt.selected = true;
         select.appendChild(opt);
       }
       return select;
-    } else {
-      input.type = 'text';
-      input.value = val || '';
     }
+    // default text
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control';
+    input.value = val || '';
     return input;
   }
 
@@ -233,6 +188,38 @@ document.addEventListener('DOMContentLoaded', function(){
       cell.innerHTML = '';
       cell.appendChild(input);
     }
+    // initialize TomSelect on any selects prepared for it
+    try{
+      // store instances so we can destroy later
+      row._tsInstances = [];
+      row.querySelectorAll('select.ts-select').forEach(function(sel){
+        // if TomSelect already attached skip
+        if(sel.tomselect) return;
+          const ts = new TomSelect(sel, {
+            placeholder: 'Buscar o crear…',
+            create: function(input){ return {value: 'new:' + input, text: input}; },
+            createOnBlur: true,
+            persist: false,
+            sortField: [{field: 'text', direction: 'asc'}],
+            searchField: ['text'],
+            dropdownParent: 'body',
+            maxOptions: 200,
+            plugins: ['clear_button'],
+            createFilter: function(input){
+              try{
+                const val = String(input).trim().toLowerCase();
+                const list = sel.dataset.tsType === 'artist' ? __ARTISTS : (sel.dataset.tsType === 'album' ? __ALBUMS : __GENRES);
+                return !list.some(function(it){ return String(it.name).toLowerCase() === val; });
+              }catch(e){ return true; }
+            }
+          });
+        row._tsInstances.push(ts);
+      });
+    }catch(e){
+      // TomSelect may not be loaded — ignore silently
+      console.warn('TomSelect init failed', e);
+    }
+
     // toggle buttons
     const editBtn = row.querySelector('.btn-edit');
     const saveBtn = row.querySelector('.btn-save');
@@ -247,6 +234,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
   function cancelEdit(row){
     if(!row.dataset.editing) return;
+    // destroy any TomSelect instances
+    try{
+      if(row._tsInstances){
+        row._tsInstances.forEach(function(ts){ try{ ts.destroy(); }catch(e){} });
+        row._tsInstances = null;
+      }
+    }catch(e){ console.warn('Error destroying TomSelect instances', e); }
     // restore
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
@@ -267,12 +261,28 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-  // collect from inputs/selects — send genre and status (FKs)
-  const keys = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
+  // collect from inputs/selects — send genre_id and status_id (FKs)
+  const keys = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
+    // collect selects that have TomSelect to map indexes
+    const tsSelects = Array.from(row.querySelectorAll('select.ts-select'));
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       const input = cell.querySelector('input, select');
-      data[keys[i-1]] = input ? input.value : '';
+      let val = '';
+      if(input){
+        if(input.tagName === 'SELECT' && input.classList.contains('ts-select')){
+          // find corresponding TomSelect instance
+          const idx = tsSelects.indexOf(input);
+          if(idx >= 0 && row._tsInstances && row._tsInstances[idx]){
+            try{ val = row._tsInstances[idx].getValue(); }catch(e){ val = input.value; }
+          } else {
+            val = input.value;
+          }
+        } else {
+          val = input.value;
+        }
+      }
+      data[keys[i-1]] = val;
     }
 
   // disable buttons and show spinner
@@ -295,53 +305,111 @@ document.addEventListener('DOMContentLoaded', function(){
         saveBtn.disabled = false; cancelBtn.disabled = false;
         return;
       }
+      const result = await res.json();
+      // if backend created related records, merge them into client arrays and replace sent "new:" tokens with returned ids
+      if(result.created){
+        if(result.created.artist){
+          __ARTISTS.push(result.created.artist);
+          if(typeof data.artist_id === 'string' && data.artist_id.startsWith('new:')){
+            data.artist_id = String(result.created.artist.id);
+            // update the current artist cell immediately
+            const artistCell = row.querySelector('.col-artist');
+            if(artistCell){ artistCell.textContent = result.created.artist.name; artistCell.setAttribute('data-artist-id', String(result.created.artist.id)); }
+          }
+        }
+        if(result.created.album){
+          __ALBUMS.push(result.created.album);
+          if(typeof data.album_id === 'string' && data.album_id.startsWith('new:')){
+            data.album_id = String(result.created.album.id);
+            const albumCell = row.querySelector('.col-album');
+            if(albumCell){ albumCell.textContent = result.created.album.name; albumCell.setAttribute('data-album-id', String(result.created.album.id)); }
+          }
+        }
+        if(result.created.genre){
+          __GENRES.push(result.created.genre);
+          if(typeof data.genre_id === 'string' && data.genre_id.startsWith('new:')){
+            data.genre_id = String(result.created.genre.id);
+            const genreCell = row.querySelector('.col-genre');
+            if(genreCell){ genreCell.textContent = result.created.genre.name; genreCell.setAttribute('data-genre-id', String(result.created.genre.id)); }
+          }
+        }
+      }
+
   // on success, update the cells to new values
-  const keysMap = ['name','project_name','genre','artist_id','album_id','status','rating','path','url','due_date','release_date'];
+  const keysMap = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
         const key = keysMap[i-1];
         const val = data[key];
         if(key === 'artist_id'){
-          // set text to selected artist name and update data-artist-id
-          const sel = cell.querySelector('select');
-          if(sel){
-            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
-            const selectedVal = sel.value || '';
-            cell.textContent = selectedText || '';
-            cell.setAttribute('data-artist-id', selectedVal);
+          // if we have a created artist just set it
+          if(result && result.created && result.created.artist && String(data.artist_id) === String(result.created.artist.id)){
+            cell.textContent = result.created.artist.name;
+            cell.setAttribute('data-artist-id', String(result.created.artist.id));
           } else {
-            cell.textContent = val || '';
-            cell.setAttribute('data-artist-id', '');
-          }
-  } else if(key === 'album_id'){
-          const sel = cell.querySelector('select');
-          if(sel){
-            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
-            const selectedVal = sel.value || '';
-            cell.textContent = selectedText || '';
-            cell.setAttribute('data-album-id', selectedVal);
-          } else {
-            cell.textContent = val || '';
-            cell.setAttribute('data-album-id', '');
-          }
-        } else if(key === 'genre'){
-          const sel = cell.querySelector('select');
-          if(sel){
-            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
-            const selectedVal = sel.value || '';
-            cell.textContent = selectedText || '';
-            cell.setAttribute('data-genre-id', selectedVal);
-          } else {
-            const genreObj = __GENRES.find(g => String(g.id) === String(val));
-            if(genreObj){
-              cell.textContent = genreObj.name;
-              cell.setAttribute('data-genre-id', genreObj.id);
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-artist-id', selectedVal);
             } else {
-              cell.textContent = val || '';
-              cell.setAttribute('data-genre-id', '');
+              // try lookup in __ARTISTS
+              const artistObj = __ARTISTS.find(a => String(a.id) === String(val));
+              if(artistObj){
+                cell.textContent = artistObj.name;
+                cell.setAttribute('data-artist-id', artistObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-artist-id', '');
+              }
             }
           }
-        } else if(key === 'status'){
+  } else if(key === 'album_id'){
+          if(result && result.created && result.created.album && String(data.album_id) === String(result.created.album.id)){
+            cell.textContent = result.created.album.name;
+            cell.setAttribute('data-album-id', String(result.created.album.id));
+          } else {
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-album-id', selectedVal);
+            } else {
+              const albumObj = __ALBUMS.find(a => String(a.id) === String(val));
+              if(albumObj){
+                cell.textContent = albumObj.name;
+                cell.setAttribute('data-album-id', albumObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-album-id', '');
+              }
+            }
+          }
+        } else if(key === 'genre_id'){
+          if(result && result.created && result.created.genre && String(data.genre_id) === String(result.created.genre.id)){
+            cell.textContent = result.created.genre.name;
+            cell.setAttribute('data-genre-id', String(result.created.genre.id));
+          } else {
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-genre-id', selectedVal);
+            } else {
+              const genreObj = __GENRES.find(g => String(g.id) === String(val));
+              if(genreObj){
+                cell.textContent = genreObj.name;
+                cell.setAttribute('data-genre-id', genreObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-genre-id', '');
+              }
+            }
+          }
+        } else if(key === 'status_id'){
           const sel = cell.querySelector('select');
           if(sel){
             const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
@@ -373,6 +441,10 @@ document.addEventListener('DOMContentLoaded', function(){
   const cancelBtn = row.querySelector('.btn-cancel');
   if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); saveBtn.disabled = false; }
   if(cancelBtn) cancelBtn.disabled = false;
+  // destroy TomSelect instances if any
+  try{
+    if(row._tsInstances){ row._tsInstances.forEach(function(ts){ try{ ts.destroy(); }catch(e){} }); row._tsInstances = null; }
+  }catch(e){ console.warn('Error destroying TomSelect after save', e); }
   showToast('Guardado correctamente', 'success');
   row.removeAttribute('data-editing');
   row._originals = null;

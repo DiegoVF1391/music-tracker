@@ -20,3 +20,40 @@
 .table td, .table th {
   white-space: nowrap;
 }
+
+/* Larger inline edit controls inside table cells */
+.table-responsive .table td .form-control,
+.table-responsive .table td .form-select {
+  min-width: 220px; /* make fields wider so values are visible */
+  max-width: 420px;
+  font-size: 0.95rem;
+}
+
+/* For very small screens, allow controls to shrink but keep readable */
+@media (max-width: 576px) {
+  .table-responsive .table td .form-control,
+  .table-responsive .table td .form-select {
+    min-width: 160px;
+  }
+}
+
+/* TomSelect / mobile-friendly tweaks */
+.ts-control, .tomselected, .tom-select .ts-control {
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+
+/* Ensure dropdown is bounded and scrollable on small devices */
+.ts-dropdown, .ts-dropdown-wrapper {
+  max-height: 50vh !important;
+  overflow: auto !important;
+}
+
+@media (max-width: 768px) {
+  table.table td .ts-control,
+  table.table td .form-select,
+  table.table td .form-control {
+    width: 100%;
+    min-width: 180px;
+  }
+}
