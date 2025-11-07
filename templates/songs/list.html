@@ -33,8 +33,22 @@
         <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
         <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">{{ song.song_statuses.name if song.song_statuses else '' }}</td>
         <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
-        <td class="col-path">{{ song.path }}</td>
-        <td class="col-url">{{ song.url }}</td>
+        <td class="col-path" title="{{ song.path }}">
+          {% if song.path %}
+            <a href="#" class="path-link" data-path="{{ song.path }}">{{ song.path }}</a>
+            <button type="button" class="btn btn-sm btn-link open-path-btn">Abrir</button>
+          {% else %}
+            
+          {% endif %}
+        </td>
+        <td class="col-url" title="{{ song.url }}">
+          {% if song.url %}
+            <a href="{{ song.url }}" class="url-link" target="_blank" rel="noopener noreferrer">{{ song.url }}</a>
+            <button type="button" class="btn btn-sm btn-link open-url-btn">Abrir</button>
+          {% else %}
+            
+          {% endif %}
+        </td>
         <td class="col-due_date">{{ song.due_date }}</td>
         <td class="col-release_date">{{ song.release_date }}</td>
         <td class="col-actions">
@@ -431,6 +445,45 @@ document.addEventListener('DOMContentLoaded', function(){
           // display stars for rating
           const ratingVal = parseInt(data['rating']) || 0;
           cell.textContent = ratingVal > 0 ? '⭐'.repeat(ratingVal) : '';
+        } else if(key === 'path'){
+          // rebuild path link + open button
+          cell.innerHTML = '';
+          if(val){
+            const a = document.createElement('a');
+            a.className = 'path-link';
+            a.dataset.path = val;
+            a.href = '#';
+            a.textContent = val;
+            a.title = val;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-link open-path-btn';
+            btn.textContent = 'Abrir';
+            cell.appendChild(a);
+            cell.appendChild(btn);
+          } else {
+            cell.textContent = '';
+          }
+        } else if(key === 'url'){
+          // rebuild url anchor + open button
+          cell.innerHTML = '';
+          if(val){
+            const a = document.createElement('a');
+            a.className = 'url-link';
+            a.href = val;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = val;
+            a.title = val;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-link open-url-btn';
+            btn.textContent = 'Abrir';
+            cell.appendChild(a);
+            cell.appendChild(btn);
+          } else {
+            cell.textContent = '';
+          }
         } else {
           cell.textContent = val || '';
         }
@@ -448,6 +501,8 @@ document.addEventListener('DOMContentLoaded', function(){
   showToast('Guardado correctamente', 'success');
   row.removeAttribute('data-editing');
   row._originals = null;
+  // reattach handlers for path/url within this row (we replaced innerHTML)
+  try{ attachRowHandlers(row); }catch(e){/* ignore */}
   if(editBtn) editBtn.classList.remove('d-none');
   if(saveBtn) saveBtn.classList.add('d-none');
   if(cancelBtn) cancelBtn.classList.add('d-none');
@@ -472,6 +527,96 @@ document.addEventListener('DOMContentLoaded', function(){
     if(saveBtn){
       saveBtn.addEventListener('click', function(){ saveEdit(row); });
     }
+    // attach row-specific handlers (path/url)
+    attachRowHandlers(row);
+  });
+
+  // helper: attach handlers for path/url open buttons within a row
+  function attachRowHandlers(row){
+    if(!row) return;
+    // path handlers
+    row.querySelectorAll('.path-link, .open-path-btn').forEach(function(el){
+      // remove existing to avoid duplicate listeners
+      el.replaceWith(el.cloneNode(true));
+    });
+    row.querySelectorAll('.path-link, .open-path-btn').forEach(function(el){
+      el.addEventListener('click', async function(e){
+        e.preventDefault();
+        const r = el.closest('tr');
+        const link = r.querySelector('.path-link');
+        if(!link) return;
+        const path = link.dataset.path || link.textContent || '';
+        try{
+          const res = await fetch('/open-file', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: path})
+          });
+          if(!res.ok){
+            const txt = await res.text();
+            showToast('No se pudo abrir el archivo: ' + res.status + ' - ' + txt, 'error');
+            return;
+          }
+          showToast('Archivo enviado a abrir en el equipo.', 'success');
+        }catch(err){
+          showToast('Error al solicitar abrir: ' + err, 'error');
+        }
+      });
+    });
+
+    // url handlers
+    row.querySelectorAll('.url-link, .open-url-btn').forEach(function(el){
+      el.replaceWith(el.cloneNode(true));
+    });
+    row.querySelectorAll('.url-link, .open-url-btn').forEach(function(el){
+      el.addEventListener('click', function(e){
+        if(el.classList.contains('open-url-btn')){
+          const r = el.closest('tr');
+          const link = r.querySelector('.url-link');
+          if(!link) return;
+          window.open(link.href, '_blank', 'noopener');
+        }
+      });
+    });
+  }
+
+  // immediate save when toggling the in_album checkbox
+  document.querySelectorAll('table tbody tr input[type="checkbox"]').forEach(function(cb){
+    cb.addEventListener('change', async function(e){
+      const row = cb.closest('tr');
+      if(!row) return;
+      // If the row is currently being edited inline, do not save immediately.
+      if(row.dataset.editing === '1'){
+        // revert the visual change and inform the user
+        cb.checked = !cb.checked;
+        showToast('La fila está en modo edición. Usa el botón Guardar para aplicar cambios.', 'warning');
+        return;
+      }
+      const id = cb.value;
+      const in_album_val = cb.checked ? 1 : 0;
+      // quick UI feedback: disable checkbox while saving
+      cb.disabled = true;
+      try{
+        const res = await fetch('/songs/edit/' + id, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({in_album: in_album_val})
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          showToast('No se pudo actualizar: ' + res.status + ' - ' + txt, 'error');
+          // revert checkbox visually
+          cb.checked = !cb.checked;
+        } else {
+          showToast('Cambio guardado', 'success');
+        }
+      }catch(err){
+        showToast('Error al conectar: ' + err, 'error');
+        cb.checked = !cb.checked;
+      } finally{
+        cb.disabled = false;
+      }
+    });
   });
 });
 </script>

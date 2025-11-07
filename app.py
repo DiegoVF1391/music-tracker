@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, current_app
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
+import sys
+import subprocess
 
 load_dotenv()
 
@@ -229,6 +231,45 @@ def edit_song(song_id):
     if created:
         result['created'] = created
     return jsonify(result), 200
+
+
+# Endpoint to open a local file on the server (useful when running locally).
+# Security: only allow opening paths that are under a configured base directory.
+@app.route('/open-file', methods=['POST'])
+def open_file():
+    data = request.get_json(silent=True)
+    if not data or 'path' not in data:
+        return jsonify({'success': False, 'error': 'No path provided.'}), 400
+    path = data.get('path')
+    # normalize
+    try:
+        abs_path = os.path.abspath(path)
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Invalid path: {e}'}), 400
+
+    # Allowed base dir from env variable; if not set, default to app root
+    base = os.environ.get('OPEN_BASE_DIR')
+    if not base:
+        base = os.path.abspath(os.getcwd())
+    else:
+        base = os.path.abspath(base)
+
+    if not abs_path.startswith(base):
+        return jsonify({'success': False, 'error': 'Path not allowed. Set OPEN_BASE_DIR if you need to open files outside the project.'}), 403
+
+    # Try to open the file on the host machine where the server runs
+    try:
+        if sys.platform.startswith('win'):
+            os.startfile(abs_path)
+        elif sys.platform.startswith('darwin'):
+            subprocess.Popen(['open', abs_path])
+        else:
+            # linux
+            subprocess.Popen(['xdg-open', abs_path])
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+    return jsonify({'success': True}), 200
 
 # ------------------------------
 # Rutas para artistas y álbumes

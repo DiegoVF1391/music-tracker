@@ -57,3 +57,46 @@
     min-width: 180px;
   }
 }
+
+/* Truncate path/url text inside table cells to avoid widening the table */
+.col-path a.path-link,
+.col-url a.url-link {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.open-path-btn, .open-url-btn {
+  font-size: 0.8rem;
+  padding: 0 6px;
+  vertical-align: middle;
+}
+
+/* Theme-aware link colors: black in light mode, white in dark mode */
+:root{
+  --link-path-color: #000000;
+  --open-btn-color: #000000;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --link-path-color: #ffffff;
+    --open-btn-color: #ffffff;
+  }
+}
+
+.col-path a.path-link,
+.col-url a.url-link {
+  color: var(--link-path-color) !important;
+  text-decoration: none !important;
+}
+.col-path a.path-link:hover,
+.col-url a.url-link:hover {
+  color: var(--link-path-color) !important;
+  text-decoration: underline !important;
+}
+.open-path-btn, .open-url-btn {
+  color: var(--open-btn-color) !important;
+}
