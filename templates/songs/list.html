@@ -3,6 +3,7 @@
 {% block content %}
 <h1 class="mb-3">🎵 Canciones</h1>
 <a href="/songs/add" class="btn btn-primary mb-3">+ Nueva canción</a>
+<!-- Barra de búsqueda global eliminada a petición del usuario -->
 <div class="table-responsive">
   <table class="table table-dark table-striped">
   <thead>
@@ -52,13 +53,33 @@
         <td class="col-due_date">{{ song.due_date }}</td>
         <td class="col-release_date">{{ song.release_date }}</td>
         <td class="col-actions">
-          <button type="button" class="btn btn-sm btn-secondary btn-edit">Editar</button>
-          <button type="button" class="btn btn-sm btn-success btn-save d-none">
-            <span class="spinner-border spinner-border-sm save-spinner d-none me-1" role="status" aria-hidden="true"></span>
-            <span class="save-text">Guardar</span>
+          <button type="button" class="btn btn-sm btn-secondary btn-edit" title="Editar" aria-label="Editar">
+            <!-- lápiz / editar (SVG inline) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708l-9.793 9.793a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168L12.146.146zM11.207 2L3 10.207V13h2.793L14 4.793 11.207 2z"/>
+            </svg>
           </button>
-          <button type="button" class="btn btn-sm btn-warning btn-cancel d-none">Cancelar</button>
-          <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1">Eliminar</a>
+          <button type="button" class="btn btn-sm btn-success btn-save d-none" title="Guardar" aria-label="Guardar">
+            <span class="spinner-border spinner-border-sm save-spinner d-none me-1" role="status" aria-hidden="true"></span>
+            <!-- icono guardar (disquete) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4L12 0H8zM6.5 1h3v2h-3V1zM2 2h4v4H2V2z"/>
+            </svg>
+          </button>
+          <button type="button" class="btn btn-sm btn-warning btn-cancel d-none" title="Cancelar" aria-label="Cancelar">
+            <!-- icono cancelar (prohibido / circle slash) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-slash-circle" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/>
+              <path d="M11.536 4.464a.5.5 0 0 1 0 .707L5.171 11.535a.5.5 0 1 1-.707-.707L10.829 4.464a.5.5 0 0 1 .707 0z"/>
+            </svg>
+          </button>
+          <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1" title="Eliminar" aria-label="Eliminar">
+            <!-- icono papelera (trash) - SVG estándar -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5v-8z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9.5A1.5 1.5 0 0 1 11.5 15h-7A1.5 1.5 0 0 1 3 13.5V4h-.5a1 1 0 0 1-1-1V2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .5.5V3zM4.118 4 4 4.059V13.5A.5.5 0 0 0 4.5 14h7a.5.5 0 0 0 .5-.5V4.059L11.882 4H4.118z"/>
+            </svg>
+          </a>
         </td>
       </tr>
     {% endfor %}
@@ -75,6 +96,11 @@
     </div>
   </div>
 </div>
+
+<!-- DataTables CSS/JS (client-side table features) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <script>
 // embed artists and albums for JS
@@ -513,22 +539,63 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }
 
-  // attach events
-  document.querySelectorAll('table tbody tr').forEach(function(row){
-    const editBtn = row.querySelector('.btn-edit');
-    const saveBtn = row.querySelector('.btn-save');
-    const cancelBtn = row.querySelector('.btn-cancel');
-    if(editBtn){
-      editBtn.addEventListener('click', function(){ enterEdit(row); });
+  // Initialize DataTables (client-side) if available and set up delegated handlers
+  let dataTable = null;
+  try{
+    if(window.jQuery && $.fn.DataTable){
+      dataTable = $('table').DataTable({
+        pageLength: 25,
+        responsive: true,
+        deferRender: true,
+        // idioma en español
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+        // disable ordering/searching for checkbox (col 0) and actions (last)
+        columnDefs: [
+          { orderable: false, searchable: false, targets: 0 },
+          { orderable: false, searchable: false, targets: -1 }
+        ]
+      });
+      // on draw, reattach handlers for visible rows
+      dataTable.on('draw', function(){
+        document.querySelectorAll('table tbody tr').forEach(function(r){ attachRowHandlers(r); });
+      });
     }
-    if(cancelBtn){
-      cancelBtn.addEventListener('click', function(){ cancelEdit(row); });
+  }catch(e){ console.warn('DataTables init failed', e); }
+
+  // No hay barra de búsqueda global (se eliminó). DataTables mostrará su propio cuadro de búsqueda.
+
+  // Delegated event handling on tbody so handlers survive pagination/redraw
+  const tbody = document.querySelector('table tbody');
+  tbody.addEventListener('click', async function(e){
+    const btn = e.target.closest('button, a');
+    if(!btn) return;
+    const row = btn.closest('tr');
+    if(!row) return;
+    // Edit / Save / Cancel buttons
+    if(btn.classList.contains('btn-edit')){ enterEdit(row); return; }
+    if(btn.classList.contains('btn-cancel')){ cancelEdit(row); return; }
+    if(btn.classList.contains('btn-save')){ saveEdit(row); return; }
+    // Path open
+    if(btn.classList.contains('open-path-btn') || btn.classList.contains('path-link')){
+      e.preventDefault();
+      const link = row.querySelector('.path-link');
+      if(!link) return;
+      const path = link.dataset.path || link.textContent || '';
+      try{
+        const res = await fetch('/open-file', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({path}) });
+        if(!res.ok){ const txt = await res.text(); showToast('No se pudo abrir el archivo: ' + res.status + ' - ' + txt, 'error'); return; }
+        showToast('Archivo enviado a abrir en el equipo.', 'success');
+      }catch(err){ showToast('Error al solicitar abrir: ' + err, 'error'); }
+      return;
     }
-    if(saveBtn){
-      saveBtn.addEventListener('click', function(){ saveEdit(row); });
+    // URL open button
+    if(btn.classList.contains('open-url-btn')){
+      e.preventDefault();
+      const link = row.querySelector('.url-link');
+      if(!link) return;
+      window.open(link.href, '_blank', 'noopener');
+      return;
     }
-    // attach row-specific handlers (path/url)
-    attachRowHandlers(row);
   });
 
   // helper: attach handlers for path/url open buttons within a row
@@ -580,43 +647,27 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // immediate save when toggling the in_album checkbox
-  document.querySelectorAll('table tbody tr input[type="checkbox"]').forEach(function(cb){
-    cb.addEventListener('change', async function(e){
-      const row = cb.closest('tr');
-      if(!row) return;
-      // If the row is currently being edited inline, do not save immediately.
-      if(row.dataset.editing === '1'){
-        // revert the visual change and inform the user
-        cb.checked = !cb.checked;
-        showToast('La fila está en modo edición. Usa el botón Guardar para aplicar cambios.', 'warning');
-        return;
-      }
-      const id = cb.value;
-      const in_album_val = cb.checked ? 1 : 0;
-      // quick UI feedback: disable checkbox while saving
-      cb.disabled = true;
-      try{
-        const res = await fetch('/songs/edit/' + id, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({in_album: in_album_val})
-        });
-        if(!res.ok){
-          const txt = await res.text();
-          showToast('No se pudo actualizar: ' + res.status + ' - ' + txt, 'error');
-          // revert checkbox visually
-          cb.checked = !cb.checked;
-        } else {
-          showToast('Cambio guardado', 'success');
-        }
-      }catch(err){
-        showToast('Error al conectar: ' + err, 'error');
-        cb.checked = !cb.checked;
-      } finally{
-        cb.disabled = false;
-      }
-    });
+  // Delegated change handler for checkboxes (survives redraw/pagination)
+  tbody.addEventListener('change', async function(e){
+    const target = e.target;
+    if(!target || target.type !== 'checkbox') return;
+    const cb = target;
+    const row = cb.closest('tr');
+    if(!row) return;
+    if(row.dataset.editing === '1'){
+      cb.checked = !cb.checked;
+      showToast('La fila está en modo edición. Usa el botón Guardar para aplicar cambios.', 'warning');
+      return;
+    }
+    const id = cb.value;
+    const in_album_val = cb.checked ? 1 : 0;
+    cb.disabled = true;
+    try{
+      const res = await fetch('/songs/edit/' + id, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({in_album: in_album_val}) });
+      if(!res.ok){ const txt = await res.text(); showToast('No se pudo actualizar: ' + res.status + ' - ' + txt, 'error'); cb.checked = !cb.checked; }
+      else { showToast('Cambio guardado', 'success'); }
+    }catch(err){ showToast('Error al conectar: ' + err, 'error'); cb.checked = !cb.checked; }
+    finally{ cb.disabled = false; }
   });
 });
 </script>
