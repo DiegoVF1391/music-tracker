@@ -260,3 +260,84 @@ main.fluid-content {
     padding-right: 4rem;
   }
 }
+/* 📱 Estilo de tarjetas para modo móvil */
+@media (max-width: 768px) {
+  .dataTables_wrapper {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2rem;
+  }
+
+  table.dataTable {
+    display: block;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100% !important;
+    font-size: 0.9rem;
+    background: transparent;
+  }
+
+  table.dataTable thead {
+    display: none;
+  }
+
+  table.dataTable tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  table.dataTable tbody tr {
+    display: block;
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  table.dataTable tbody tr:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  }
+
+  table.dataTable tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 6px 0;
+  }
+
+  table.dataTable tbody td:last-child {
+    border-bottom: none;
+  }
+
+  table.dataTable tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #bbb;
+    text-transform: capitalize;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Hace que badges, botones y estrellas mantengan formato */
+  table.dataTable tbody td span,
+  table.dataTable tbody td a,
+  table.dataTable tbody td button {
+    flex-shrink: 0;
+  }
+
+  /* Acciones alineadas */
+  table.dataTable tbody td[data-label="Acciones"] {
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* Sin bordes de scroll feos */
+  div.dataTables_scrollBody {
+    border: none !important;
+  }
+}

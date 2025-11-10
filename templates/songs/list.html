@@ -26,10 +26,10 @@
   <tbody>
     {% for song in songs %}
       <tr>
-        <td><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
-        <td class="col-name">{{ song.name }}</td>
-        <td class="col-project">{{ song.project_name }}</td>
-        <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}">
+        <td data-label="Dentro del album?"><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
+        <td class="col-name" data-label="Nombre">{{ song.name }} </td>
+        <td class="col-project" data-label="Proyecto">{{ song.project_name }}</td>
+        <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}" data-label="Genero">
           {% if song.genre %}
             <span class="badge" style="--badge-color: {{ song.genres.color }};">
               {{ song.genres.name if song.genres else (song.genre if song.genre else '') }}
@@ -38,7 +38,7 @@
             —
           {% endif %}
         </td>
-        <td class="col-artist" data-artist-id="{{ song.artist_id or '' }}">
+        <td class="col-artist" data-artist-id="{{ song.artist_id or '' }}" data-label="Artista">
           {% if song.artists %}
             <span class="badge" style="--badge-color: {{ song.artists.color }};">
               {{ song.artists.name }}
@@ -47,7 +47,7 @@
             —
           {% endif %}
         </td>
-        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">
+        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}" data-label="Álbum">
           {% if song.albums %}
             <span class="badge" style="--badge-color: {{ song.albums.color }};">
               {{ song.albums.name if song.albums else '' }}
@@ -56,7 +56,7 @@
             —
           {% endif %}
         </td>
-        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">
+        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}" data-label="Status">
           {% if song.song_statuses %}
             <span class="badge" style="--badge-color: {{ song.song_statuses.color }};">
               {{ song.song_statuses.name if song.song_statuses else '' }}
@@ -65,8 +65,8 @@
             —
           {% endif %}
         </td>
-        <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
-        <td class="col-path" title="{{ song.path }}">
+        <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}" data-label="Rating">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
+        <td class="col-path" title="{{ song.path }}" data-label="Path">
           {% if song.path %}
             <a href="#" class="path-link" data-path="{{ song.path }}">{{ song.path }}</a>
             <button type="button" class="btn btn-sm btn-link open-path-btn">Abrir</button>
@@ -74,7 +74,7 @@
             
           {% endif %}
         </td>
-        <td class="col-url" title="{{ song.url }}">
+        <td class="col-url" title="{{ song.url }}" data-label="Url">
           {% if song.url %}
             <a href="{{ song.url }}" class="url-link" target="_blank" rel="noopener noreferrer">{{ song.url }}</a>
             <button type="button" class="btn btn-sm btn-link open-url-btn">Abrir</button>
@@ -82,8 +82,8 @@
             
           {% endif %}
         </td>
-        <td class="col-due_date">{{ song.due_date }}</td>
-        <td class="col-release_date">{{ song.release_date }}</td>
+        <td class="col-due_date" data-label="Fecha terminada">{{ song.due_date }}</td>
+        <td class="col-release_date" data-label="Fecha lanzamiento">{{ song.release_date }}</td>
         <td class="col-actions">
           <button type="button" class="btn btn-sm btn-secondary btn-edit" title="Editar" aria-label="Editar">
             <!-- lápiz / editar (SVG inline) -->
