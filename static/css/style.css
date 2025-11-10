@@ -100,3 +100,12 @@
 .open-path-btn, .open-url-btn {
   color: var(--open-btn-color) !important;
 }
+
+.badge {
+  background-color: var(--badge-color);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  display: inline-block;
+}

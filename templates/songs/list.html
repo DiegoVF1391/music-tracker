@@ -29,10 +29,42 @@
         <td><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
         <td class="col-name">{{ song.name }}</td>
         <td class="col-project">{{ song.project_name }}</td>
-  <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}">{{ song.genres.name if song.genres else (song.genre if song.genre else '') }}</td>
-        <td class="col-artist" data-artist-id="{{ song.artist_id if song.artist_id is not none else '' }}">{{ song.artists.name if song.artists else '' }}</td>
-        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">{{ song.albums.name if song.albums else '' }}</td>
-        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">{{ song.song_statuses.name if song.song_statuses else '' }}</td>
+        <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}">
+          {% if song.genre %}
+            <span class="badge" style="--badge-color: {{ song.genres.color }};">
+              {{ song.genres.name if song.genres else (song.genre if song.genre else '') }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-artist" data-artist-id="{{ song.artist_id or '' }}">
+          {% if song.artists %}
+            <span class="badge" style="--badge-color: {{ song.artists.color }};">
+              {{ song.artists.name }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">
+          {% if song.albums %}
+            <span class="badge" style="--badge-color: {{ song.albums.color }};">
+              {{ song.albums.name if song.albums else '' }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">
+          {% if song.song_statuses %}
+            <span class="badge" style="--badge-color: {{ song.song_statuses.color }};">
+              {{ song.song_statuses.name if song.song_statuses else '' }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
         <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
         <td class="col-path" title="{{ song.path }}">
           {% if song.path %}
