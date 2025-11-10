@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Canciones{% endblock %}
 {% block content %}
-<h1 class="mb-3">🎵 Canciones</h1>
-<a href="/songs/add" class="btn btn-primary mb-3">+ Nueva canción</a>
-<div class="table-responsive">
+<h3 class="mb-3">🎵 Canciones</h3>
+<a href="/songs/add" class="btn btn-primary mb-3 mt-1">+ Nueva canción</a>
+<!-- Barra de búsqueda global eliminada a petición del usuario -->
+<div class="table-responsive mt-1">
   <table class="table table-dark table-striped">
   <thead>
     <tr>
@@ -28,43 +29,219 @@
         <td><input type="checkbox" name="select[]" value="{{ song.id }}" {% if song.in_album %}checked{% endif %}></td>
         <td class="col-name">{{ song.name }}</td>
         <td class="col-project">{{ song.project_name }}</td>
-        <td class="col-genre">{{ song.genre }}</td>
-        <td class="col-artist">{{ song.artists.name if song.artists else '' }}</td>
-        <td class="col-album">{{ song.albums.name if song.albums else '' }}</td>
-        <td class="col-status">{{ song.status }}</td>
-        <td class="col-rating">{{ song.rating }}</td>
-        <td class="col-path">{{ song.path }}</td>
-        <td class="col-url">{{ song.url }}</td>
+        <td class="col-genre" data-genre-id="{{ song.genre if song.genre is not none else '' }}">
+          {% if song.genre %}
+            <span class="badge" style="--badge-color: {{ song.genres.color }};">
+              {{ song.genres.name if song.genres else (song.genre if song.genre else '') }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-artist" data-artist-id="{{ song.artist_id or '' }}">
+          {% if song.artists %}
+            <span class="badge" style="--badge-color: {{ song.artists.color }};">
+              {{ song.artists.name }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-album" data-album-id="{{ song.album_id if song.album_id is not none else '' }}">
+          {% if song.albums %}
+            <span class="badge" style="--badge-color: {{ song.albums.color }};">
+              {{ song.albums.name if song.albums else '' }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-status" data-status-id="{{ song.status if song.status is not none else '' }}">
+          {% if song.song_statuses %}
+            <span class="badge" style="--badge-color: {{ song.song_statuses.color }};">
+              {{ song.song_statuses.name if song.song_statuses else '' }}
+            </span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="col-rating" data-rating-id="{{ song.rating if song.rating is not none else '' }}">{% if song.rating %}{% set r = song.rating|int %}{% for i in range(r) %}⭐{% endfor %}{% endif %}</td>
+        <td class="col-path" title="{{ song.path }}">
+          {% if song.path %}
+            <a href="#" class="path-link" data-path="{{ song.path }}">{{ song.path }}</a>
+            <button type="button" class="btn btn-sm btn-link open-path-btn">Abrir</button>
+          {% else %}
+            
+          {% endif %}
+        </td>
+        <td class="col-url" title="{{ song.url }}">
+          {% if song.url %}
+            <a href="{{ song.url }}" class="url-link" target="_blank" rel="noopener noreferrer">{{ song.url }}</a>
+            <button type="button" class="btn btn-sm btn-link open-url-btn">Abrir</button>
+          {% else %}
+            
+          {% endif %}
+        </td>
         <td class="col-due_date">{{ song.due_date }}</td>
         <td class="col-release_date">{{ song.release_date }}</td>
         <td class="col-actions">
-          <button type="button" class="btn btn-sm btn-secondary btn-edit">Editar</button>
-          <button type="button" class="btn btn-sm btn-success btn-save d-none">Guardar</button>
-          <button type="button" class="btn btn-sm btn-warning btn-cancel d-none">Cancelar</button>
-          <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1">Eliminar</a>
+          <button type="button" class="btn btn-sm btn-secondary btn-edit" title="Editar" aria-label="Editar">
+            <!-- lápiz / editar (SVG inline) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708l-9.793 9.793a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168L12.146.146zM11.207 2L3 10.207V13h2.793L14 4.793 11.207 2z"/>
+            </svg>
+          </button>
+          <button type="button" class="btn btn-sm btn-success btn-save d-none" title="Guardar" aria-label="Guardar">
+            <span class="spinner-border spinner-border-sm save-spinner d-none me-1" role="status" aria-hidden="true"></span>
+            <!-- icono guardar (disquete) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4L12 0H8zM6.5 1h3v2h-3V1zM2 2h4v4H2V2z"/>
+            </svg>
+          </button>
+          <button type="button" class="btn btn-sm btn-warning btn-cancel d-none" title="Cancelar" aria-label="Cancelar">
+            <!-- icono cancelar (prohibido / circle slash) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-slash-circle" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/>
+              <path d="M11.536 4.464a.5.5 0 0 1 0 .707L5.171 11.535a.5.5 0 1 1-.707-.707L10.829 4.464a.5.5 0 0 1 .707 0z"/>
+            </svg>
+          </button>
+          <a href="/songs/delete/{{ song.id }}" class="btn btn-danger btn-sm ms-1" title="Eliminar" aria-label="Eliminar">
+            <!-- icono papelera (trash) - SVG estándar -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 5h4a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5v-8z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9.5A1.5 1.5 0 0 1 11.5 15h-7A1.5 1.5 0 0 1 3 13.5V4h-.5a1 1 0 0 1-1-1V2.5A.5.5 0 0 1 2 2h12a.5.5 0 0 1 .5.5V3zM4.118 4 4 4.059V13.5A.5.5 0 0 0 4.5 14h7a.5.5 0 0 0 .5-.5V4.059L11.882 4H4.118z"/>
+            </svg>
+          </a>
         </td>
       </tr>
     {% endfor %}
   </tbody>
   </table>
 </div>
+
+<!-- Toast container -->
+<div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index:1080">
+  <div id="globalToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="globalToastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<!-- DataTables CSS/JS (client-side table features) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
 <script>
+// embed artists and albums for JS
+const __ARTISTS = {{ artists|tojson|safe }};
+const __ALBUMS = {{ albums|tojson|safe }};
+const __STATUS = {{ song_statuses|tojson|safe }};
+const __GENRES = {{ genres|tojson|safe }};
+
 document.addEventListener('DOMContentLoaded', function(){
+  function showToast(message, type='success'){
+    const toastEl = document.getElementById('globalToast');
+    if(!toastEl) return;
+    // normalize type
+    const clsRemove = ['text-bg-success','text-bg-danger','text-bg-warning'];
+    clsRemove.forEach(c => toastEl.classList.remove(c));
+    const cls = type === 'success' ? 'text-bg-success' : (type === 'error' ? 'text-bg-danger' : 'text-bg-warning');
+    toastEl.classList.add(cls);
+    toastEl.querySelector('.toast-body').textContent = message;
+    const bsToast = new bootstrap.Toast(toastEl);
+    bsToast.show();
+  }
+
   function toInput(cell, type){
     const val = cell.textContent.trim();
-    let input = document.createElement('input');
-    input.className = 'form-control form-control-sm';
+    // number
     if(type === 'number'){
+      const input = document.createElement('input');
       input.type = 'number';
+      input.className = 'form-control';
       input.value = val || '';
-    } else if(type === 'date'){
-      input.type = 'date';
-      // try to parse date-like values
-      input.value = val ? val : '';
-    } else {
-      input.type = 'text';
-      input.value = val || '';
+      return input;
     }
+    // date
+    if(type === 'date'){
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.className = 'form-control';
+      input.value = val ? val : '';
+      return input;
+    }
+    // artist/album/genre -> select + TomSelect
+    if(type === 'artist' || type === 'album' || type === 'genre'){
+  const select = document.createElement('select');
+  select.className = 'form-select ts-select';
+  // mark type so createFilter can decide which list to check
+  select.dataset.tsType = type;
+      const dataAttr = type === 'artist' ? 'data-artist-id' : (type === 'album' ? 'data-album-id' : 'data-genre-id');
+      const currentId = cell.getAttribute(dataAttr) || '';
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      const list = type === 'artist' ? __ARTISTS : (type === 'album' ? __ALBUMS : __GENRES);
+      list.forEach(function(a){
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.name;
+        if(String(a.id) === String(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if(!currentId){
+        const currentName = val;
+        if(currentName){
+          const createOpt = document.createElement('option');
+          createOpt.value = 'new:' + currentName;
+          createOpt.textContent = 'Crear: ' + currentName;
+          createOpt.selected = true;
+          select.appendChild(createOpt);
+        }
+      }
+      return select;
+    }
+    // status
+    if(type === 'status'){
+      const select = document.createElement('select');
+      select.className = 'form-select';
+      const currentId = cell.getAttribute('data-status-id') || '';
+      const emptyOpt = document.createElement('option');
+      emptyOpt.value = '';
+      emptyOpt.textContent = '(ninguno)';
+      select.appendChild(emptyOpt);
+      __STATUS.forEach(function(a){
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.name;
+        if(String(a.id) === String(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      return select;
+    }
+    // rating
+    if(type === 'rating'){
+      const select = document.createElement('select');
+      select.className = 'form-select';
+      const currentId = cell.getAttribute('data-rating-id') || '';
+      for(let r=1;r<=5;r++){
+        const opt = document.createElement('option');
+        opt.value = String(r);
+        opt.textContent = '⭐'.repeat(r);
+        if(r === parseInt(currentId)) opt.selected = true;
+        select.appendChild(opt);
+      }
+      return select;
+    }
+    // default text
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control';
+    input.value = val || '';
     return input;
   }
 
@@ -74,8 +251,8 @@ document.addEventListener('DOMContentLoaded', function(){
     row.dataset.editing = '1';
     // store originals
     row._originals = [];
-    // cells mapping (skip checkbox at 0 and actions at last)
-    const types = {1:'text',2:'text',3:'text',4:'text',5:'text',6:'text',7:'number',8:'text',9:'text',10:'date',11:'date'};
+  // cells mapping (skip checkbox at 0 and actions at last)
+  const types = {1:'text',2:'text',3:'genre',4:'artist',5:'album',6:'status',7:'rating',8:'text',9:'text',10:'date',11:'date'};
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
       row._originals.push(cell.innerHTML);
@@ -83,14 +260,59 @@ document.addEventListener('DOMContentLoaded', function(){
       cell.innerHTML = '';
       cell.appendChild(input);
     }
+    // initialize TomSelect on any selects prepared for it
+    try{
+      // store instances so we can destroy later
+      row._tsInstances = [];
+      row.querySelectorAll('select.ts-select').forEach(function(sel){
+        // if TomSelect already attached skip
+        if(sel.tomselect) return;
+          const ts = new TomSelect(sel, {
+            placeholder: 'Buscar o crear…',
+            create: function(input){ return {value: 'new:' + input, text: input}; },
+            createOnBlur: true,
+            persist: false,
+            sortField: [{field: 'text', direction: 'asc'}],
+            searchField: ['text'],
+            dropdownParent: 'body',
+            maxOptions: 200,
+            plugins: ['clear_button'],
+            createFilter: function(input){
+              try{
+                const val = String(input).trim().toLowerCase();
+                const list = sel.dataset.tsType === 'artist' ? __ARTISTS : (sel.dataset.tsType === 'album' ? __ALBUMS : __GENRES);
+                return !list.some(function(it){ return String(it.name).toLowerCase() === val; });
+              }catch(e){ return true; }
+            }
+          });
+        row._tsInstances.push(ts);
+      });
+    }catch(e){
+      // TomSelect may not be loaded — ignore silently
+      console.warn('TomSelect init failed', e);
+    }
+
     // toggle buttons
-    row.querySelector('.btn-edit').classList.add('d-none');
-    row.querySelector('.btn-save').classList.remove('d-none');
-    row.querySelector('.btn-cancel').classList.remove('d-none');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    editBtn.classList.add('d-none');
+    saveBtn.classList.remove('d-none');
+    cancelBtn.classList.remove('d-none');
+    // ensure buttons are enabled (they may have been left disabled)
+    if(saveBtn) saveBtn.disabled = false;
+    if(cancelBtn) cancelBtn.disabled = false;
   }
 
   function cancelEdit(row){
     if(!row.dataset.editing) return;
+    // destroy any TomSelect instances
+    try{
+      if(row._tsInstances){
+        row._tsInstances.forEach(function(ts){ try{ ts.destroy(); }catch(e){} });
+        row._tsInstances = null;
+      }
+    }catch(e){ console.warn('Error destroying TomSelect instances', e); }
     // restore
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
@@ -98,9 +320,12 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     row.removeAttribute('data-editing');
     row._originals = null;
-    row.querySelector('.btn-edit').classList.remove('d-none');
-    row.querySelector('.btn-save').classList.add('d-none');
-    row.querySelector('.btn-cancel').classList.add('d-none');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    if(editBtn) editBtn.classList.remove('d-none');
+    if(saveBtn) { saveBtn.classList.add('d-none'); saveBtn.disabled = false; }
+    if(cancelBtn) { cancelBtn.classList.add('d-none'); cancelBtn.disabled = false; }
   }
 
   async function saveEdit(row){
@@ -108,18 +333,35 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-    // collect from inputs
-    const keys = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+  // collect from inputs/selects — send genre_id and status_id (FKs)
+  const keys = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
+    // collect selects that have TomSelect to map indexes
+    const tsSelects = Array.from(row.querySelectorAll('select.ts-select'));
     for(let i=1;i<=11;i++){
       const cell = row.cells[i];
-      const input = cell.querySelector('input');
-      data[keys[i-1]] = input ? input.value : '';
+      const input = cell.querySelector('input, select');
+      let val = '';
+      if(input){
+        if(input.tagName === 'SELECT' && input.classList.contains('ts-select')){
+          // find corresponding TomSelect instance
+          const idx = tsSelects.indexOf(input);
+          if(idx >= 0 && row._tsInstances && row._tsInstances[idx]){
+            try{ val = row._tsInstances[idx].getValue(); }catch(e){ val = input.value; }
+          } else {
+            val = input.value;
+          }
+        } else {
+          val = input.value;
+        }
+      }
+      data[keys[i-1]] = val;
     }
 
-    // disable buttons
-    const saveBtn = row.querySelector('.btn-save');
-    const cancelBtn = row.querySelector('.btn-cancel');
-    saveBtn.disabled = true; cancelBtn.disabled = true;
+  // disable buttons and show spinner
+  const saveBtn = row.querySelector('.btn-save');
+  const cancelBtn = row.querySelector('.btn-cancel');
+  if(saveBtn) { saveBtn.disabled = true; const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.remove('d-none'); }
+  if(cancelBtn) cancelBtn.disabled = true;
 
     try{
       const res = await fetch('/songs/edit/' + id, {
@@ -129,42 +371,344 @@ document.addEventListener('DOMContentLoaded', function(){
       });
       if(!res.ok){
         const text = await res.text();
-        alert('Error al guardar: ' + res.status + '\n' + text);
+        // hide spinner
+        if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); }
+        showToast('Error al guardar: ' + res.status + ' - ' + text, 'error');
         saveBtn.disabled = false; cancelBtn.disabled = false;
         return;
       }
-      // on success, update the cells to new values
-      const keysMap = ['name','project_name','genre','artist','album','status','rating','path','url','due_date','release_date'];
+      const result = await res.json();
+      // if backend created related records, merge them into client arrays and replace sent "new:" tokens with returned ids
+      if(result.created){
+        if(result.created.artist){
+          __ARTISTS.push(result.created.artist);
+          if(typeof data.artist_id === 'string' && data.artist_id.startsWith('new:')){
+            data.artist_id = String(result.created.artist.id);
+            // update the current artist cell immediately
+            const artistCell = row.querySelector('.col-artist');
+            if(artistCell){ artistCell.textContent = result.created.artist.name; artistCell.setAttribute('data-artist-id', String(result.created.artist.id)); }
+          }
+        }
+        if(result.created.album){
+          __ALBUMS.push(result.created.album);
+          if(typeof data.album_id === 'string' && data.album_id.startsWith('new:')){
+            data.album_id = String(result.created.album.id);
+            const albumCell = row.querySelector('.col-album');
+            if(albumCell){ albumCell.textContent = result.created.album.name; albumCell.setAttribute('data-album-id', String(result.created.album.id)); }
+          }
+        }
+        if(result.created.genre){
+          __GENRES.push(result.created.genre);
+          if(typeof data.genre_id === 'string' && data.genre_id.startsWith('new:')){
+            data.genre_id = String(result.created.genre.id);
+            const genreCell = row.querySelector('.col-genre');
+            if(genreCell){ genreCell.textContent = result.created.genre.name; genreCell.setAttribute('data-genre-id', String(result.created.genre.id)); }
+          }
+        }
+      }
+
+  // on success, update the cells to new values
+  const keysMap = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
-        const val = data[keysMap[i-1]];
-        cell.textContent = val;
-      }
-      row.removeAttribute('data-editing');
-      row._originals = null;
-      row.querySelector('.btn-edit').classList.remove('d-none');
-      row.querySelector('.btn-save').classList.add('d-none');
-      row.querySelector('.btn-cancel').classList.add('d-none');
+        const key = keysMap[i-1];
+        const val = data[key];
+        if(key === 'artist_id'){
+          // if we have a created artist just set it
+          if(result && result.created && result.created.artist && String(data.artist_id) === String(result.created.artist.id)){
+            cell.textContent = result.created.artist.name;
+            cell.setAttribute('data-artist-id', String(result.created.artist.id));
+          } else {
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-artist-id', selectedVal);
+            } else {
+              // try lookup in __ARTISTS
+              const artistObj = __ARTISTS.find(a => String(a.id) === String(val));
+              if(artistObj){
+                cell.textContent = artistObj.name;
+                cell.setAttribute('data-artist-id', artistObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-artist-id', '');
+              }
+            }
+          }
+  } else if(key === 'album_id'){
+          if(result && result.created && result.created.album && String(data.album_id) === String(result.created.album.id)){
+            cell.textContent = result.created.album.name;
+            cell.setAttribute('data-album-id', String(result.created.album.id));
+          } else {
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-album-id', selectedVal);
+            } else {
+              const albumObj = __ALBUMS.find(a => String(a.id) === String(val));
+              if(albumObj){
+                cell.textContent = albumObj.name;
+                cell.setAttribute('data-album-id', albumObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-album-id', '');
+              }
+            }
+          }
+        } else if(key === 'genre_id'){
+          if(result && result.created && result.created.genre && String(data.genre_id) === String(result.created.genre.id)){
+            cell.textContent = result.created.genre.name;
+            cell.setAttribute('data-genre-id', String(result.created.genre.id));
+          } else {
+            const sel = cell.querySelector('select');
+            if(sel){
+              const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+              const selectedVal = sel.value || '';
+              cell.textContent = selectedText || '';
+              cell.setAttribute('data-genre-id', selectedVal);
+            } else {
+              const genreObj = __GENRES.find(g => String(g.id) === String(val));
+              if(genreObj){
+                cell.textContent = genreObj.name;
+                cell.setAttribute('data-genre-id', genreObj.id);
+              } else {
+                cell.textContent = val || '';
+                cell.setAttribute('data-genre-id', '');
+              }
+            }
+          }
+        } else if(key === 'status_id'){
+          const sel = cell.querySelector('select');
+          if(sel){
+            const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            const selectedVal = sel.value || '';
+            cell.textContent = selectedText || '';
+            cell.setAttribute('data-status-id', selectedVal);
+          } else {
+            // fallback: lookup in __STATUS
+            const statusObj = __STATUS.find(s => String(s.id) === String(val));
+            if(statusObj){
+              cell.textContent = statusObj.name;
+              cell.setAttribute('data-status-id', statusObj.id);
+            } else {
+              cell.textContent = val || '';
+              cell.setAttribute('data-status-id', '');
+            }
+          }
+        } else if(key === 'rating'){
+          // display stars for rating
+          const ratingVal = parseInt(data['rating']) || 0;
+          cell.textContent = ratingVal > 0 ? '⭐'.repeat(ratingVal) : '';
+        } else if(key === 'path'){
+          // rebuild path link + open button
+          cell.innerHTML = '';
+          if(val){
+            const a = document.createElement('a');
+            a.className = 'path-link';
+            a.dataset.path = val;
+            a.href = '#';
+            a.textContent = val;
+            a.title = val;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-link open-path-btn';
+            btn.textContent = 'Abrir';
+            cell.appendChild(a);
+            cell.appendChild(btn);
+          } else {
+            cell.textContent = '';
+          }
+        } else if(key === 'url'){
+          // rebuild url anchor + open button
+          cell.innerHTML = '';
+          if(val){
+            const a = document.createElement('a');
+            a.className = 'url-link';
+            a.href = val;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = val;
+            a.title = val;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-link open-url-btn';
+            btn.textContent = 'Abrir';
+            cell.appendChild(a);
+            cell.appendChild(btn);
+          } else {
+            cell.textContent = '';
+          }
+        } else {
+          cell.textContent = val || '';
+        }
+  }
+  // re-enable buttons (in case they were disabled) and switch UI back
+  const editBtn = row.querySelector('.btn-edit');
+  const saveBtn = row.querySelector('.btn-save');
+  const cancelBtn = row.querySelector('.btn-cancel');
+  if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); saveBtn.disabled = false; }
+  if(cancelBtn) cancelBtn.disabled = false;
+  // destroy TomSelect instances if any
+  try{
+    if(row._tsInstances){ row._tsInstances.forEach(function(ts){ try{ ts.destroy(); }catch(e){} }); row._tsInstances = null; }
+  }catch(e){ console.warn('Error destroying TomSelect after save', e); }
+  showToast('Guardado correctamente', 'success');
+  row.removeAttribute('data-editing');
+  row._originals = null;
+  // reattach handlers for path/url within this row (we replaced innerHTML)
+  try{ attachRowHandlers(row); }catch(e){/* ignore */}
+  if(editBtn) editBtn.classList.remove('d-none');
+  if(saveBtn) saveBtn.classList.add('d-none');
+  if(cancelBtn) cancelBtn.classList.add('d-none');
     }catch(err){
-      alert('Error al conectar: ' + err);
+      if(saveBtn){ const spinner = saveBtn.querySelector('.save-spinner'); if(spinner) spinner.classList.add('d-none'); }
+      showToast('Error al conectar: ' + err, 'error');
       saveBtn.disabled = false; cancelBtn.disabled = false;
     }
   }
 
-  // attach events
-  document.querySelectorAll('table tbody tr').forEach(function(row){
-    const editBtn = row.querySelector('.btn-edit');
-    const saveBtn = row.querySelector('.btn-save');
-    const cancelBtn = row.querySelector('.btn-cancel');
-    if(editBtn){
-      editBtn.addEventListener('click', function(){ enterEdit(row); });
+  // Initialize DataTables (client-side) if available and set up delegated handlers
+  let dataTable = null;
+  try{
+    if(window.jQuery && $.fn.DataTable){
+      dataTable = $('table').DataTable({
+        pageLength: 25,
+        scrollX: true,                // Activa scroll horizontal
+        fixedHeader: true,            // Fija el encabezado de la tabla
+        responsive: false,            // Lo dejamos en falso porque usamos scrollX
+        pagingType: "simple_numbers", // Estilo de paginación limpio
+        deferRender: true,
+        // idioma en español
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+        // disable ordering/searching for checkbox (col 0) and actions (last)
+        columnDefs: [
+          { orderable: false, searchable: false, targets: 0 },
+          { orderable: false, searchable: false, targets: -1 }
+        ]
+      });
+      
+      
+      // on draw, reattach handlers for visible rows
+      dataTable.on('draw', function(){
+        document.querySelectorAll('table tbody tr').forEach(function(r){ attachRowHandlers(r); });
+      });
+
+      // Mueve los controles del datatable a un contenedor fijo
+      const controls = $('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate');
+      controls.wrapAll('<div class="datatable-controls-fixed"></div>');
     }
-    if(cancelBtn){
-      cancelBtn.addEventListener('click', function(){ cancelEdit(row); });
+  }catch(e){ console.warn('DataTables init failed', e); }
+
+  // No hay barra de búsqueda global (se eliminó). DataTables mostrará su propio cuadro de búsqueda.
+
+  // Delegated event handling on tbody so handlers survive pagination/redraw
+  const tbody = document.querySelector('table tbody');
+  tbody.addEventListener('click', async function(e){
+    const btn = e.target.closest('button, a');
+    if(!btn) return;
+    const row = btn.closest('tr');
+    if(!row) return;
+    // Edit / Save / Cancel buttons
+    if(btn.classList.contains('btn-edit')){ enterEdit(row); return; }
+    if(btn.classList.contains('btn-cancel')){ cancelEdit(row); return; }
+    if(btn.classList.contains('btn-save')){ saveEdit(row); return; }
+    // Path open
+    if(btn.classList.contains('open-path-btn') || btn.classList.contains('path-link')){
+      e.preventDefault();
+      const link = row.querySelector('.path-link');
+      if(!link) return;
+      const path = link.dataset.path || link.textContent || '';
+      try{
+        const res = await fetch('/open-file', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({path}) });
+        if(!res.ok){ const txt = await res.text(); showToast('No se pudo abrir el archivo: ' + res.status + ' - ' + txt, 'error'); return; }
+        showToast('Archivo enviado a abrir en el equipo.', 'success');
+      }catch(err){ showToast('Error al solicitar abrir: ' + err, 'error'); }
+      return;
     }
-    if(saveBtn){
-      saveBtn.addEventListener('click', function(){ saveEdit(row); });
+    // URL open button
+    if(btn.classList.contains('open-url-btn')){
+      e.preventDefault();
+      const link = row.querySelector('.url-link');
+      if(!link) return;
+      window.open(link.href, '_blank', 'noopener');
+      return;
     }
+  });
+
+  // helper: attach handlers for path/url open buttons within a row
+  function attachRowHandlers(row){
+    if(!row) return;
+    // path handlers
+    row.querySelectorAll('.path-link, .open-path-btn').forEach(function(el){
+      // remove existing to avoid duplicate listeners
+      el.replaceWith(el.cloneNode(true));
+    });
+    row.querySelectorAll('.path-link, .open-path-btn').forEach(function(el){
+      el.addEventListener('click', async function(e){
+        e.preventDefault();
+        const r = el.closest('tr');
+        const link = r.querySelector('.path-link');
+        if(!link) return;
+        const path = link.dataset.path || link.textContent || '';
+        try{
+          const res = await fetch('/open-file', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: path})
+          });
+          if(!res.ok){
+            const txt = await res.text();
+            showToast('No se pudo abrir el archivo: ' + res.status + ' - ' + txt, 'error');
+            return;
+          }
+          showToast('Archivo enviado a abrir en el equipo.', 'success');
+        }catch(err){
+          showToast('Error al solicitar abrir: ' + err, 'error');
+        }
+      });
+    });
+
+    // url handlers
+    row.querySelectorAll('.url-link, .open-url-btn').forEach(function(el){
+      el.replaceWith(el.cloneNode(true));
+    });
+    row.querySelectorAll('.url-link, .open-url-btn').forEach(function(el){
+      el.addEventListener('click', function(e){
+        if(el.classList.contains('open-url-btn')){
+          const r = el.closest('tr');
+          const link = r.querySelector('.url-link');
+          if(!link) return;
+          window.open(link.href, '_blank', 'noopener');
+        }
+      });
+    });
+  }
+
+  // Delegated change handler for checkboxes (survives redraw/pagination)
+  tbody.addEventListener('change', async function(e){
+    const target = e.target;
+    if(!target || target.type !== 'checkbox') return;
+    const cb = target;
+    const row = cb.closest('tr');
+    if(!row) return;
+    if(row.dataset.editing === '1'){
+      cb.checked = !cb.checked;
+      showToast('La fila está en modo edición. Usa el botón Guardar para aplicar cambios.', 'warning');
+      return;
+    }
+    const id = cb.value;
+    const in_album_val = cb.checked ? 1 : 0;
+    cb.disabled = true;
+    try{
+      const res = await fetch('/songs/edit/' + id, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({in_album: in_album_val}) });
+      if(!res.ok){ const txt = await res.text(); showToast('No se pudo actualizar: ' + res.status + ' - ' + txt, 'error'); cb.checked = !cb.checked; }
+      else { showToast('Cambio guardado', 'success'); }
+    }catch(err){ showToast('Error al conectar: ' + err, 'error'); cb.checked = !cb.checked; }
+    finally{ cb.disabled = false; }
   });
 });
 </script>

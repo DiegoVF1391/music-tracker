@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Nueva Canción{% endblock %}
 {% block content %}
-<h1 class="mb-3">Agregar Canción</h1>
+<h3 class="mb-3">Agregar Canción</h3>
 <form method="POST" class="row g-3">
   <div class="col-md-6">
     <label class="form-label">Nombre</label>
@@ -13,21 +13,25 @@
   </div>
   <div class="col-md-6">
     <label class="form-label">Género</label>
-    <input name="genre" class="form-control">
+    <select name="genre_id" class="form-select ts-select" data-ts-type="genre">
+      <option value="">(ninguno)</option>
+      {% for g in genres %}
+      <option value="{{ g.id }}">{{ g.name }}</option>
+      {% endfor %}
+    </select>
   </div>
   <div class="col-md-6">
     <label class="form-label">Estado</label>
-    <select name="status" class="form-select">
-      <option>Idea</option>
-      <option>Producción</option>
-      <option>Mezcla</option>
-      <option>Master</option>
-      <option>Finalizada</option>
+    <select name="status_id" class="form-select">
+      {% for s in song_statuses %}
+      <option value="{{ s.id }}">{{ s.name }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="col-md-6">
     <label class="form-label">Artista</label>
-    <select name="artist_id" class="form-select">
+    <select name="artist_id" class="form-select ts-select" data-ts-type="artist">
+      <option value="">(ninguno)</option>
       {% for artist in artists %}
       <option value="{{ artist.id }}">{{ artist.name }}</option>
       {% endfor %}
@@ -35,7 +39,8 @@
   </div>
   <div class="col-md-6">
     <label class="form-label">Álbum</label>
-    <select name="album_id" class="form-select">
+    <select name="album_id" class="form-select ts-select" data-ts-type="album">
+      <option value="">(ninguno)</option>
       {% for album in albums %}
       <option value="{{ album.id }}">{{ album.name }}</option>
       {% endfor %}
@@ -63,6 +68,24 @@
   </div>
   <div class="col-12">
     <button type="submit" class="btn btn-success mt-3">Guardar</button>
+    <a href="/songs" class="btn btn-danger mt-3">Cancelar</a>
   </div>
 </form>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // initialize TomSelect for any .ts-select on the add form
+  try{
+    document.querySelectorAll('select.ts-select').forEach(function(sel){
+      new TomSelect(sel, {
+        create: function(input){ return {value: 'new:' + input, text: input}; },
+        createOnBlur: true,
+        persist: false,
+        dropdownParent: 'body',
+        plugins: ['clear_button'],
+        maxOptions: 200
+      });
+    });
+  }catch(e){ console.warn('TomSelect init failed on add form', e); }
+});
+</script>
 {% endblock %}
