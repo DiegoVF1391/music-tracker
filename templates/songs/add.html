@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Nueva Canción{% endblock %}
 {% block content %}
-<h1 class="mb-3">Agregar Canción</h1>
+<h3 class="mb-3">Agregar Canción</h3>
 <form method="POST" class="row g-3">
   <div class="col-md-6">
     <label class="form-label">Nombre</label>
@@ -68,6 +68,7 @@
   </div>
   <div class="col-12">
     <button type="submit" class="btn btn-success mt-3">Guardar</button>
+    <a href="/songs" class="btn btn-danger mt-3">Cancelar</a>
   </div>
 </form>
 <script>

@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Canciones{% endblock %}
 {% block content %}
-<h1 class="mb-3">🎵 Canciones</h1>
-<a href="/songs/add" class="btn btn-primary mb-3">+ Nueva canción</a>
+<h3 class="mb-3">🎵 Canciones</h3>
+<a href="/songs/add" class="btn btn-primary mb-3 mt-1">+ Nueva canción</a>
 <!-- Barra de búsqueda global eliminada a petición del usuario -->
-<div class="table-responsive">
+<div class="table-responsive mt-1">
   <table class="table table-dark table-striped">
   <thead>
     <tr>
@@ -577,7 +577,10 @@ document.addEventListener('DOMContentLoaded', function(){
     if(window.jQuery && $.fn.DataTable){
       dataTable = $('table').DataTable({
         pageLength: 25,
-        responsive: true,
+        scrollX: true,                // Activa scroll horizontal
+        fixedHeader: true,            // Fija el encabezado de la tabla
+        responsive: false,            // Lo dejamos en falso porque usamos scrollX
+        pagingType: "simple_numbers", // Estilo de paginación limpio
         deferRender: true,
         // idioma en español
         language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
@@ -587,10 +590,16 @@ document.addEventListener('DOMContentLoaded', function(){
           { orderable: false, searchable: false, targets: -1 }
         ]
       });
+      
+      
       // on draw, reattach handlers for visible rows
       dataTable.on('draw', function(){
         document.querySelectorAll('table tbody tr').forEach(function(r){ attachRowHandlers(r); });
       });
+
+      // Mueve los controles del datatable a un contenedor fijo
+      const controls = $('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate');
+      controls.wrapAll('<div class="datatable-controls-fixed"></div>');
     }
   }catch(e){ console.warn('DataTables init failed', e); }
 
