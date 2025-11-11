@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 fw-bold">📊 Dashboard Musical</h1>
+
+    <!-- === STATS CARDS === -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-dark shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Total Canciones</h6>
+                    <h3>{{ total_songs }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-success shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Completadas</h6>
+                    <h3>{{ completed_songs }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-warning shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">En Producción</h6>
+                    <h3>{{ total_songs - completed_songs }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-info shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">Próximos Lanzamientos</h6>
+                    <h3>{{ upcoming_releases|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === UPCOMING DUE DATES === -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
+        </div>
+        <div class="card-body">
+            {% if upcoming_due %}
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Artista</th>
+                            <th>Álbum</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for song in upcoming_due %}
+                            <tr>
+                                <td>{{ song.name }}</td>
+                                <td>{{ song.artists.name if song.artists }}</td>
+                                <td>{{ song.albums.name if song.albums }}</td>
+                                <td>{{ song.due_date }}</td>
+                                <td>{{ song.song_statuses.name if song.song_statuses }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted mb-0">No hay canciones próximas a vencer 🎧</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- === UPCOMING RELEASES === -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <strong>🚀 Próximos lanzamientos</strong>
+        </div>
+        <div class="card-body">
+            {% if upcoming_releases %}
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Artista</th>
+                            <th>Álbum</th>
+                            <th>Fecha Lanzamiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for song in upcoming_releases %}
+                            <tr>
+                                <td>{{ song.name }}</td>
+                                <td>{{ song.artists.name if song.artists }}</td>
+                                <td>{{ song.albums.name if song.albums }}</td>
+                                <td>{{ song.release_date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted mb-0">Sin lanzamientos próximos 🔈</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- === RELEASED SONGS === -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <strong>🎶 Canciones lanzadas</strong>
+        </div>
+        <div class="card-body">
+            {% if released_songs %}
+                <div class="row row-cols-1 row-cols-md-3 g-3">
+                    {% for song in released_songs %}
+                        <div class="col">
+                            <div class="card h-100 text-bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ song.name }}</h5>
+                                    <p class="card-text text-muted mb-1">{{ song.artists.name if song.artists }}</p>
+                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Aún no hay lanzamientos publicados 🚫</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

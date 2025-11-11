@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import sys
 import subprocess
+from datetime import date, timedelta
 
 load_dotenv()
 
@@ -19,6 +20,35 @@ supabase: Client = create_client(url, key)
 # ------------------------------
 
 @app.route("/", methods=["GET"])
+def dashboard():
+    today = date.today()
+
+    upcoming_due = supabase.table("songs").select(
+        "*, artists(name), albums(name), song_statuses(name)"
+    ).gte("due_date", today.isoformat()).lte(
+        "due_date", (today + timedelta(days=7)).isoformat()
+    ).execute()
+
+    upcoming_releases = supabase.table("songs").select(
+        "*, artists(name), albums(name)"
+    ).gte("release_date", today.isoformat()).execute()
+
+    released_songs = supabase.table("songs").select(
+        "*, artists(name), albums(name)"
+    ).lte("release_date", today.isoformat()).execute()
+
+    total_songs = supabase.table("songs").select("id", count="exact").execute().count
+    completed_songs = supabase.table("songs").select("id", count="exact").eq("status", 3).execute().count
+
+    return render_template(
+        "dashboard.html",
+        upcoming_due=upcoming_due.data,
+        upcoming_releases=upcoming_releases.data,
+        released_songs=released_songs.data,
+        total_songs=total_songs,
+        completed_songs=completed_songs,
+    )
+
 @app.route("/songs", methods=["GET"])
 def list_songs():
     songs = supabase.table("songs").select("*, artists(name, color), albums(name, color), song_statuses(name, color), genres(name, color)").execute()
@@ -141,10 +171,10 @@ def add_song():
             # legacy string
             insert_data['genre'] = data.get('genre') or None
 
-        # status_id handling
-        if 'status_id' in data:
+        # status handling
+        if 'status' in data:
             try:
-                insert_data['status'] = int(data.get('status_id')) if data.get('status_id') not in (None, '') else None
+                insert_data['status'] = int(data.get('status')) if data.get('status') not in (None, '') else None
             except Exception:
                 insert_data['status'] = None
         elif 'status' in data:
