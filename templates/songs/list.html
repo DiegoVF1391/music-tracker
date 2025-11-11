@@ -333,8 +333,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const data = {};
     // in_album from checkbox at cell 0
     data.in_album = row.querySelector('input[type="checkbox"]').checked ? 1 : 0;
-  // collect from inputs/selects — send genre_id and status_id (FKs)
-  const keys = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
+  // collect from inputs/selects — send genre_id and status (FKs)
+  const keys = ['name','project_name','genre_id','artist_id','album_id','status','rating','path','url','due_date','release_date'];
     // collect selects that have TomSelect to map indexes
     const tsSelects = Array.from(row.querySelectorAll('select.ts-select'));
     for(let i=1;i<=11;i++){
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function(){
       }
 
   // on success, update the cells to new values
-  const keysMap = ['name','project_name','genre_id','artist_id','album_id','status_id','rating','path','url','due_date','release_date'];
+  const keysMap = ['name','project_name','genre_id','artist_id','album_id','status','rating','path','url','due_date','release_date'];
       for(let i=1;i<=11;i++){
         const cell = row.cells[i];
         const key = keysMap[i-1];
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function(){
               }
             }
           }
-        } else if(key === 'status_id'){
+        } else if(key === 'status'){
           const sel = cell.querySelector('select');
           if(sel){
             const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';

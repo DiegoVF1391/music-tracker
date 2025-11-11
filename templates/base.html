@@ -11,6 +11,9 @@
   <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
@@ -20,6 +23,7 @@
   <header class="main-header d-flex flex-column flex-md-row align-items-center justify-content-between">
     <h1 class="logo"> MusicTracker</h1>
     <nav class="nav-links mt-2 mt-md-0">
+      <a href="/" class="{% if request.path == '/' %}active{% endif %}">Inicio</a>
       <a href="/songs" class="{% if request.path == '/songs' %}active{% endif %}">Canciones</a>
       <a href="/artists" class="{% if request.path == '/artists' %}active{% endif %}">Artistas</a>
       <a href="/albums" class="{% if request.path == '/albums' %}active{% endif %}">Álbumes</a>
