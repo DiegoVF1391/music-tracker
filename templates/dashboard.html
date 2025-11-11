@@ -266,6 +266,35 @@ div[class*="card"] > .row {
             </div>
         </div>
     </div>
+    
+    {% for comment in comments %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-sm text-center">
+                <div class="card-body">
+                    <h6>⏱️ Tasa de finalización</h6>
+                    <h2 class="fw-bold">{{ monthly_completion_rate }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-sm text-center">
+                <div class="card-body">
+                    <h6>🎧 Total de canciones</h6>
+                    <h2 class="fw-bold">{{ total_songs }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-sm text-center">
+                <div class="card-body">
+                    <h6>✅ Completadas</h6>
+                    <h2 class="fw-bold">{{ completed_songs }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 
     <!-- === PROGRESO GENERAL === -->
     <div class="card bg-dark text-white mb-4 shadow-sm">
@@ -276,13 +305,13 @@ div[class*="card"] > .row {
                     {{ progress_percentage }}%
                 </div>
             </div>
-            <small class="text-muted">Canciones completadas: {{ completed_songs }}/{{ total_songs }}</small>
+            <small class="text">Canciones completadas: {{ completed_songs }}/{{ total_songs }}</small>
         </div>
     </div>
 
     <!-- === UPCOMING DUE DATES === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-danger text-white">
+        <div class="card-header bg-info text-white">
             <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
         </div>
         <div class="card-body">
@@ -317,6 +346,32 @@ div[class*="card"] > .row {
         </div>
     </div>
 
+    <!-- === CANCIONES RETRASADAS === -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <strong>🚫 Canciones retrasadas</strong>
+        </div>
+        <div class="card-body">
+            {% if overdue_songs %}
+                <div class="row row-cols-1 row-cols-md-3 g-3">
+                    {% for song in overdue_songs %}
+                        <div class="col">
+                            <div class="card h-100 text-bg-dark">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ song.name }}</h5>
+                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
+                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text mb-0">Aún no hay canciones retrasadas 🚫</p>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- === UPCOMING RELEASES === -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-primary text-white">
@@ -347,11 +402,11 @@ div[class*="card"] > .row {
                     </table>
                 </div>
             {% else %}
-                <p class="text-muted mb-0">Sin lanzamientos próximos 🔈</p>
+                <p class="text mb-0">Sin lanzamientos próximos 🔈</p>
             {% endif %}
         </div>
     </div>
-
+   
     <!-- === RELEASED SONGS === -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-success text-white">
@@ -365,7 +420,7 @@ div[class*="card"] > .row {
                             <div class="card h-100 text-bg-dark">
                                 <div class="card-body">
                                     <h5 class="card-title">{{ song.name }}</h5>
-                                    <p class="card-text text-muted mb-1">{{ song.artists.name if song.artists }}</p>
+                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
                                     <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
                                 </div>
                             </div>
@@ -373,35 +428,8 @@ div[class*="card"] > .row {
                     {% endfor %}
                 </div>
             {% else %}
-                <p class="text-muted mb-0">Aún no hay lanzamientos publicados 🚫</p>
+                <p class="text mb-0">Aún no hay lanzamientos publicados 🚫</p>
             {% endif %}
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card bg-dark text-white shadow-sm text-center">
-                <div class="card-body">
-                    <h6>⏱️ Tiempo promedio por proyecto</h6>
-                    <h2 class="fw-bold">{{ avg_duration }} días</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-dark text-white shadow-sm text-center">
-                <div class="card-body">
-                    <h6>🎧 Total de canciones</h6>
-                    <h2 class="fw-bold">{{ total_songs }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-dark text-white shadow-sm text-center">
-                <div class="card-body">
-                    <h6>✅ Completadas</h6>
-                    <h2 class="fw-bold">{{ completed_songs }}</h2>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -442,7 +470,7 @@ div[class*="card"] > .row {
                     <span>
                         <strong>{{ s.name }}</strong>
                         {% if s.updated_at %}
-                        <small class="text-muted d-block">Última actualización: {{ s.updated_at }}</small>
+                        <small class="text d-block">Última actualización: {{ s.updated_at }}</small>
                         {% endif %}
                     </span>
                     {% if s.status_id %}
@@ -451,7 +479,7 @@ div[class*="card"] > .row {
                 </li>
                 {% endfor %}
             {% else %}
-                <li class="list-group-item bg-dark text-muted text-center">Sin actividad reciente</li>
+                <li class="list-group-item bg-dark text text-center">Sin actividad reciente</li>
             {% endif %}
         </ul>
     </div>
