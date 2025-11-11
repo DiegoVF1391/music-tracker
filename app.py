@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 import sys
 import subprocess
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 load_dotenv()
 
@@ -40,6 +40,50 @@ def dashboard():
     total_songs = supabase.table("songs").select("id", count="exact").execute().count
     completed_songs = supabase.table("songs").select("id", count="exact").eq("status", 3).execute().count
 
+    # Obtener distribución por estado
+    statuses = supabase.table("song_statuses").select("id, name").execute().data
+    status_labels = []
+    status_counts = []
+
+    for status in statuses:
+        count = supabase.table("songs").select("id", count="exact").eq("status", status["id"]).execute().count
+        status_labels.append(status["name"])
+        status_counts.append(count)
+
+    # Obtener distribución por género
+    genres = supabase.table("genres").select("id, name").execute().data
+    genre_labels = []
+    genre_counts = []
+
+    for genre in genres:
+        count = supabase.table("songs").select("id", count="exact").eq("genre", genre["id"]).execute().count
+        genre_labels.append(genre["name"])
+        genre_counts.append(count)
+
+    # === Progreso general ===
+    if total_songs > 0:
+        progress_percentage = round((completed_songs / total_songs) * 100, 1)
+    else:
+        progress_percentage = 0
+
+    # === Promedio de tiempo por proyecto ===
+    songs_data = supabase.table("songs").select("due_date, release_date").execute().data
+    durations = []
+
+    for s in songs_data:
+        if s.get("due_date") and s.get("release_date"):
+            try:
+                start = datetime.strptime(s["due_date"], "%Y-%m-%d")
+                end = datetime.strptime(s["release_date"], "%Y-%m-%d")
+                durations.append((end - start).days)
+            except Exception:
+                continue
+
+    avg_duration = round(sum(durations) / len(durations), 1) if durations else 0
+
+    # === Actividad reciente (últimos 5 cambios) ===
+    recent_songs = supabase.table("songs").select("*").order("updated_at", desc=True).limit(5).execute().data
+
     return render_template(
         "dashboard.html",
         upcoming_due=upcoming_due.data,
@@ -47,6 +91,13 @@ def dashboard():
         released_songs=released_songs.data,
         total_songs=total_songs,
         completed_songs=completed_songs,
+        progress_percentage=progress_percentage,
+        avg_duration=avg_duration,
+        recent_songs=recent_songs,
+        status_labels=status_labels,
+        status_counts=status_counts,
+        genre_labels=genre_labels,
+        genre_counts=genre_counts
     )
 
 @app.route("/songs", methods=["GET"])
@@ -146,9 +197,9 @@ def add_song():
                     except Exception:
                         insert_data['album_id'] = None
 
-        # genre_id / new:
-        if 'genre_id' in data:
-            g_val = data.get('genre_id')
+        # genre / new:
+        if 'genre' in data:
+            g_val = data.get('genre')
             if not g_val:
                 insert_data['genre'] = None
             else:
@@ -328,9 +379,9 @@ def edit_song(song_id):
         if not album_name:
             update_data['album_id'] = None
 
-    # Genre ID handling: prefer explicit genre_id, allow 'new:<name>' token to create
-    if 'genre_id' in data:
-        g_val = data.get('genre_id')
+    # Genre ID handling: prefer explicit genre, allow 'new:<name>' token to create
+    if 'genre' in data:
+        g_val = data.get('genre')
         if not g_val:
             update_data['genre'] = None
         else:
