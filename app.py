@@ -5,7 +5,9 @@ import os
 import sys
 import subprocess
 from datetime import date, timedelta, datetime
+from collections import Counter
 
+# Cargar variables de entorno desde el archivo .env
 load_dotenv()
 
 app = Flask(__name__)
@@ -23,127 +25,122 @@ supabase: Client = create_client(url, key)
 def dashboard():
     today = date.today()
 
-    # 1. 🚨 PRÓXIMOS A VENCER (PELIGRO - Requiere atención inmediata)
-    # Canciones NO TERMINADAS (status < 9) y con due_date entre hoy y +7 días.
+    # === 1. Canciones próximas a vencer ===
     upcoming_due = supabase.table("songs").select(
         "*, artists(name), albums(name), song_statuses(name)"
     ).not_.in_("status", [9, 10]
     ).gte("due_date", today.isoformat()
     ).lte("due_date", (today + timedelta(days=7)).isoformat()
-    ).order("due_date", desc=False).execute() # Ordenar por fecha más cercana
+    ).order("due_date", desc=False).execute()
 
-    # 2. 🚀 APTOS PARA LANZAMIENTO (Listos para subir o ya subidos)
-    # Canciones TERMINADAS (status 9 o 10) y con release_date en el futuro.
+    # === 2. Próximos lanzamientos ===
     upcoming_releases = supabase.table("songs").select(
         "*, artists(name), albums(name)"
-    ).in_("status", [9, 10] # Solo si está terminado/en plataforma
+    ).in_("status", [9, 10]
     ).gte("release_date", today.isoformat()
     ).order("release_date", desc=False).execute()
 
-    # 3. 🔴 RETRASADOS (CRÍTICO - La fecha de entrega ya pasó y no está terminado)
-    # Canciones NO TERMINADAS (status < 9) y con due_date en el pasado.
+    # === 3. Retrasados ===
     overdue_songs = supabase.table("songs").select(
         "*, artists(name), albums(name)"
     ).not_.in_("status", [9, 10]
     ).lt("due_date", today.isoformat()
-    ).order("due_date", desc=True).execute() # Mostrar los más retrasados primero
+    ).order("due_date", desc=True).execute()
 
-    # 4. CANCIONES LANZADAS (Histórico, opcional)
-    # Canciones con status 10 (En plataformas) con release_date en el pasado.
+    # === 4. Lanzadas (histórico) ===
     released_songs = supabase.table("songs").select(
         "*, artists(name), albums(name)"
-    ).eq("status", 10 # Solo las que ya están "En plataformas"
+    ).eq("status", 10
     ).lt("release_date", today.isoformat()
     ).execute()
-    
-    # El resto de tu código de contadores y métricas no necesita cambios
-    
+
+    # === 5. Totales y progreso general ===
     total_songs = supabase.table("songs").select("id", count="exact").execute().count
     completed_songs = supabase.table("songs").select("id", count="exact").in_("status", [9, 10]).execute().count
+    progress_percentage = round((completed_songs / total_songs) * 100, 1) if total_songs > 0 else 0
 
-    # ... [Resto del código para status, genres, progreso, duración, y actividad reciente] ...
-    
-    # === Progreso general ===
-    if total_songs > 0:
-        progress_percentage = round((completed_songs / total_songs) * 100, 1)
-    else:
-        progress_percentage = 0
-
-    """songs_data = supabase.table("songs").select("due_date, release_date").execute().data
-    durations = []
-    
-    for s in songs_data:
-        if s.get("due_date") and s.get("release_date"):
-            try:
-                start = datetime.strptime(s["due_date"], "%Y-%m-%d")
-                end = datetime.strptime(s["release_date"], "%Y-%m-%d")
-                durations.append((end - start).days)
-            except Exception:
-                continue
-
-    avg_duration = round(sum(durations) / len(durations), 1) if durations else 0"""
-    # === Tasa de Finalización del Último Mes ===
+    # === 6. Tasa de finalización del último mes ===
     last_month = date.today() - timedelta(days=30)
-
-    # Obtener canciones terminadas (9 o 10) cuya última actualización fue en los últimos 30 días
-    recently_completed_songs = supabase.table("songs").select(
-        "id", count="exact"
-    ).in_("status", [9, 10]
-    ).gte("updated_at", last_month.isoformat()
-    ).execute().count
-
-    # Métrica para mostrar
+    recently_completed_songs = supabase.table("songs").select("id", count="exact").in_("status", [9, 10]).gte("updated_at", last_month.isoformat()).execute().count
     monthly_completion_rate = recently_completed_songs
 
-
-    # === Métrica 2: Distribución de Proyectos de Alto Riesgo ===
-    count_upcoming_due = upcoming_due.count
-    count_overdue = overdue_songs.count
-    print("Proyectos de alto riesgo - Próximos a vencer:", count_upcoming_due)
-    print("Proyectos de alto riesgo - Retrasados:", count_overdue)
-    #total_risk_projects = count_upcoming_due + count_overdue
-
-    statuses = supabase.table("song_statuses").select("id, name").execute().data
-    status_labels = []
-    status_counts = []
-
+    # === 7. Distribución de status ===
+    statuses = supabase.table("song_statuses").select("id, name, color").execute().data
+    status_labels, status_counts, status_colors = [], [],  []
     for status in statuses:
         count = supabase.table("songs").select("id", count="exact").eq("status", status["id"]).execute().count
         status_labels.append(status["name"])
+        status_colors.append(status["color"])
         status_counts.append(count)
 
-    genres = supabase.table("genres").select("id, name").execute().data
-    genre_labels = []
-    genre_counts = []
-
+    # === 8. Distribución de géneros ===
+    genres = supabase.table("genres").select("id, name, color").execute().data
+    genre_labels, genre_counts, genre_color = [], [], []
     for genre in genres:
         count = supabase.table("songs").select("id", count="exact").eq("genre", genre["id"]).execute().count
         genre_labels.append(genre["name"])
+        genre_color.append(genre["color"])
         genre_counts.append(count)
-        
+
+    # === 9. Canciones recientes ===
     recent_songs = supabase.table("songs").select("*").order("updated_at", desc=True).limit(5).execute().data
 
+    # === 10. Canciones favoritas (rating = 5) ===
+    favorite_songs = supabase.table("songs").select("id", count="exact").eq("rating", 5).execute().count
 
+    # === 11. Actividad anual (terminadas por mes) ===
+    year_start = date(today.year, 1, 1)
+    completed_year = supabase.table("songs").select("release_date").in_("status", [9, 10]).gte("release_date", year_start.isoformat()).execute().data
+
+    monthly_activity = Counter()
+    for song in completed_year:
+        if song.get("release_date"):
+            try:
+                d = datetime.strptime(song["release_date"], "%Y-%m-%d")
+                month = d.strftime("%b")
+                monthly_activity[month] += 1
+            except:
+                continue
+
+    months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    activity_counts = [monthly_activity.get(m, 0) for m in months]
+
+    # === 12. Canciones por álbum ===
+    albums = supabase.table("albums").select("id, name, color").execute().data
+    album_labels, album_counts, album_colors = [], [], []
+    for album in albums:
+        count = supabase.table("songs").select("id", count="exact").eq("album_id", album["id"]).execute().count
+        album_labels.append(album["name"])
+        album_colors.append(album["color"])
+        album_counts.append(count)
+
+    
     return render_template(
         "dashboard.html",
         upcoming_due=upcoming_due.data,
         upcoming_releases=upcoming_releases.data,
-        # Cambiado: released_songs ahora es solo lo que ya está en plataformas.
-        released_songs=released_songs.data, 
-        # Añadida nueva variable para las canciones retrasadas.
-        overdue_songs=overdue_songs.data, 
+        released_songs=released_songs.data,
+        overdue_songs=overdue_songs.data,
         total_songs=total_songs,
         completed_songs=completed_songs,
         progress_percentage=progress_percentage,
-        #avg_duration=avg_duration,
         recent_songs=recent_songs,
         status_labels=status_labels,
         status_counts=status_counts,
         genre_labels=genre_labels,
+        genre_color=genre_color,
+        status_colors=status_colors,
+        album_colors=album_colors,
         genre_counts=genre_counts,
-        monthly_completion_rate=monthly_completion_rate, # Tasa de finalización del último mes
+        monthly_completion_rate=monthly_completion_rate,
+        favorite_songs=favorite_songs,
+        months=months,
+        activity_counts=activity_counts,
+        album_labels=album_labels,
+        album_counts=album_counts,
     )
-    
+
+
 @app.route("/songs", methods=["GET"])
 def list_songs():
     songs = supabase.table("songs").select("*, artists(name, color), albums(name, color), song_statuses(name, color), genres(name, color)").execute()

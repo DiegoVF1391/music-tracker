@@ -267,16 +267,16 @@ div[class*="card"] > .row {
         </div>
     </div>
     
-    {% for comment in comments %}
+    
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
-                    <h6>⏱️ Tasa de finalización</h6>
-                    <h2 class="fw-bold">{{ monthly_completion_rate }}</h2>
+                    <h6>⭐ Favoritas</h6>
+                    <h2 class="fw-bold">{{ favorite_songs.count }}</h2>
                 </div>
             </div>
-        </div>
+        </div>{% for comment in comments %}
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
@@ -292,9 +292,9 @@ div[class*="card"] > .row {
                     <h2 class="fw-bold">{{ completed_songs }}</h2>
                 </div>
             </div>
-        </div>
+        </div>{% endfor %}
     </div>
-    {% endfor %}
+    
 
     <!-- === PROGRESO GENERAL === -->
     <div class="card bg-dark text-white mb-4 shadow-sm">
@@ -458,6 +458,34 @@ div[class*="card"] > .row {
         </div>
     </div>
 
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <!-- Actividad anual -->
+            <div class="card bg-dark text-white shadow-sm">
+                <div class="card-header">
+                    <strong>🎼 Actividad</strong>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <!-- Canciones por álbum -->
+            <div class="card bg-dark text-white shadow-sm">
+                <div class="card-header">
+                    <strong>🎧 Distribución por Album</strong>
+                </div>
+                <div class="card-body">
+                    <canvas id="albumChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- === ACTIVIDAD RECIENTE === -->
     <div class="card bg-dark text-white shadow-sm mb-4">
         <div class="card-header">
@@ -496,9 +524,7 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: {{ status_labels|tojson }},
             datasets: [{
                 data: {{ status_counts|tojson }},
-                backgroundColor: [
-                    '#00BFFF', '#FFD700', '#FF4500', '#ADFF2F', '#8A2BE2', '#FF69B4'
-                ],
+                backgroundColor: {{ status_colors|tojson }},
                 borderWidth: 0
             }]
         },
@@ -512,24 +538,56 @@ document.addEventListener("DOMContentLoaded", function() {
     // === Gráfico por Género ===
     const ctxGenre = document.getElementById("genreChart");
     new Chart(ctxGenre, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels: {{ genre_labels|tojson }},
             datasets: [{
                 label: 'Canciones por Género',
                 data: {{ genre_counts|tojson }},
-                backgroundColor: '#00BFFF',
-                borderRadius: 6
+                backgroundColor: {{ genre_color|tojson }},
+                borderRadius: 0
             }]
         },
         options: {
-            scales: {
-                x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            },
             plugins: {
                 legend: { labels: { color: "#fff" } }
             }
+        }
+    });
+
+    const ctxActivity = document.getElementById('activityChart');
+    new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+            labels: {{ months|tojson }},
+            datasets: [{
+                label: 'Canciones terminadas este año',
+                data: {{ activity_counts|tojson }},
+                fill: true,
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    const ctxAlbum = document.getElementById('albumChart');
+    new Chart(ctxAlbum, {
+        type: 'bar',
+        data: {
+            labels: {{ album_labels|tojson }},
+            datasets: [{
+                label: 'Canciones por Álbum',
+                data: {{ album_counts|tojson }},
+                backgroundColor: {{ album_colors|tojson }},
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 });
