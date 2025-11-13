@@ -60,9 +60,9 @@ def dashboard():
     progress_percentage = round((completed_songs / total_songs) * 100, 1) if total_songs > 0 else 0
 
     # === 6. Tasa de finalización del último mes ===
-    last_month = date.today() - timedelta(days=30)
+    """last_month = date.today() - timedelta(days=30)
     recently_completed_songs = supabase.table("songs").select("id", count="exact").in_("status", [9, 10]).gte("updated_at", last_month.isoformat()).execute().count
-    monthly_completion_rate = recently_completed_songs
+    monthly_completion_rate = recently_completed_songs"""
 
     # === 7. Distribución de status ===
     statuses = supabase.table("song_statuses").select("id, name, color").execute().data
@@ -87,7 +87,7 @@ def dashboard():
 
     # === 10. Canciones favoritas (rating = 5) ===
     favorite_songs = supabase.table("songs").select("id", count="exact").eq("rating", 5).execute().count
-
+    
     # === 11. Actividad anual (terminadas por mes) ===
     year_start = date(today.year, 1, 1)
     completed_year = supabase.table("songs").select("release_date").in_("status", [9, 10]).gte("release_date", year_start.isoformat()).execute().data
@@ -114,6 +114,15 @@ def dashboard():
         album_colors.append(album["color"])
         album_counts.append(count)
 
+    # === ⭐ Promedio general de rating ===
+    ratings_data = supabase.table("songs").select("rating").not_.is_("rating", None).execute().data
+    if ratings_data:
+        avg_rating = round(sum([s["rating"] for s in ratings_data if s.get("rating")]) / len(ratings_data), 1)
+    else:
+        avg_rating = 0
+
+    # === 🪫 Canciones abandonadas ===
+    abandoned_songs = supabase.table("songs").select("id", count="exact").eq("status", 8).execute().count  # usa el status correspondiente a 'Abandonada'
     
     return render_template(
         "dashboard.html",
@@ -134,6 +143,8 @@ def dashboard():
         genre_counts=genre_counts,
         monthly_completion_rate=monthly_completion_rate,
         favorite_songs=favorite_songs,
+        abandoned_songs=abandoned_songs,
+        avg_rating=avg_rating,
         months=months,
         activity_counts=activity_counts,
         album_labels=album_labels,

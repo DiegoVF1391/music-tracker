@@ -273,26 +273,26 @@ div[class*="card"] > .row {
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
                     <h6>⭐ Favoritas</h6>
-                    <h2 class="fw-bold">{{ favorite_songs.count }}</h2>
-                </div>
-            </div>
-        </div>{% for comment in comments %}
-        <div class="col-md-4">
-            <div class="card bg-dark text-white shadow-sm text-center">
-                <div class="card-body">
-                    <h6>🎧 Total de canciones</h6>
-                    <h2 class="fw-bold">{{ total_songs }}</h2>
+                    <h2 class="fw-bold">{{ favorite_songs }} canciones</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
-                    <h6>✅ Completadas</h6>
-                    <h2 class="fw-bold">{{ completed_songs }}</h2>
+                    <h6>🧮 Rating promedio</h6>
+                    <h2 class="fw-bold">{{ avg_rating }}</h2>
                 </div>
             </div>
-        </div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-sm text-center">
+                <div class="card-body">
+                    <h6>🪫 Abandonadas</h6>
+                    <h2 class="fw-bold">{{ abandoned_songs }}</h2>
+                </div>
+            </div>
+        </div>
     </div>
     
 
