@@ -260,3 +260,20 @@ main.fluid-content {
     padding-right: 4rem;
   }
 }
+
+/* Evita que los textos largos deformen las celdas */
+.table td.col-name,
+.table td.col-project,
+.table td.col-artist,
+.table td.col-album {
+  max-width: 190px;               /* límite visual */
+  white-space: nowrap;            /* no salta de línea */
+  overflow: hidden;               /* oculta el exceso */
+  text-overflow: ellipsis;        /* agrega “…” */
+  vertical-align: middle;         /* centrado vertical */
+}
+
+/* Asegura que el tooltip muestre el texto completo */
+.table td[title] {
+  cursor: help;
+}

@@ -267,34 +267,34 @@ div[class*="card"] > .row {
         </div>
     </div>
     
-    {% for comment in comments %}
+    
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
-                    <h6>⏱️ Tasa de finalización</h6>
-                    <h2 class="fw-bold">{{ monthly_completion_rate }}</h2>
+                    <h6>⭐ Favoritas</h6>
+                    <h2 class="fw-bold">{{ favorite_songs }} canciones</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
-                    <h6>🎧 Total de canciones</h6>
-                    <h2 class="fw-bold">{{ total_songs }}</h2>
+                    <h6>🧮 Rating promedio</h6>
+                    <h2 class="fw-bold">{{ avg_rating }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm text-center">
                 <div class="card-body">
-                    <h6>✅ Completadas</h6>
-                    <h2 class="fw-bold">{{ completed_songs }}</h2>
+                    <h6>🪫 Abandonadas</h6>
+                    <h2 class="fw-bold">{{ abandoned_songs }}</h2>
                 </div>
             </div>
         </div>
     </div>
-    {% endfor %}
+    
 
     <!-- === PROGRESO GENERAL === -->
     <div class="card bg-dark text-white mb-4 shadow-sm">
@@ -311,152 +311,209 @@ div[class*="card"] > .row {
 
     <!-- === UPCOMING DUE DATES === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-info text-white">
-            <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
-        </div>
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseDueDates" role="button" aria-expanded="true" aria-controls="collapseDueDates">
+        <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseDueDates" class="collapse show">
         <div class="card-body">
-            {% if upcoming_due %}
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Artista</th>
-                                <th>Álbum</th>
-                                <th>Fecha de entrega</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for song in upcoming_due %}
-                                <tr>
-                                    <td>{{ song.name }}</td>
-                                    <td>{{ song.artists.name if song.artists }}</td>
-                                    <td>{{ song.albums.name if song.albums }}</td>
-                                    <td>{{ song.due_date }}</td>
-                                    <td>{{ song.song_statuses.name if song.song_statuses }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text mb-0">No hay canciones próximas a vencer 🎧</p>
-            {% endif %}
+        {% if upcoming_due %}
+            <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Artista</th>
+                    <th>Álbum</th>
+                    <th>Fecha de entrega</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for song in upcoming_due %}
+                <tr>
+                    <td>{{ song.name }}</td>
+                    <td>{{ song.artists.name if song.artists }}</td>
+                    <td>{{ song.albums.name if song.albums }}</td>
+                    <td>{{ song.due_date }}</td>
+                    <td>{{ song.song_statuses.name if song.song_statuses }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <p class="text mb-0">No hay canciones próximas a vencer 🎧</p>
+        {% endif %}
         </div>
+    </div>
     </div>
 
     <!-- === CANCIONES RETRASADAS === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-danger text-white">
-            <strong>🚫 Canciones retrasadas</strong>
-        </div>
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseOverdue" role="button" aria-expanded="true" aria-controls="collapseOverdue">
+        <strong>🚫 Canciones retrasadas</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseOverdue" class="collapse show">
         <div class="card-body">
-            {% if overdue_songs %}
-                <div class="row row-cols-1 row-cols-md-3 g-3">
-                    {% for song in overdue_songs %}
-                        <div class="col">
-                            <div class="card h-100 text-bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ song.name }}</h5>
-                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
-                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+        {% if overdue_songs %}
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for song in overdue_songs %}
+            <div class="col">
+                <div class="card h-100 text-bg-dark">
+                <div class="card-body">
+                    <h5 class="card-title">{{ song.name }}</h5>
+                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
+                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
                 </div>
-            {% else %}
-                <p class="text mb-0">Aún no hay canciones retrasadas 🚫</p>
-            {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p class="text mb-0">Aún no hay canciones retrasadas 🚫</p>
+        {% endif %}
         </div>
+    </div>
     </div>
 
     <!-- === UPCOMING RELEASES === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <strong>🚀 Próximos lanzamientos</strong>
-        </div>
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseReleases" role="button" aria-expanded="true" aria-controls="collapseReleases">
+        <strong>🚀 Próximos lanzamientos</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseReleases" class="collapse show">
         <div class="card-body">
-            {% if upcoming_releases %}
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Artista</th>
-                                <th>Álbum</th>
-                                <th>Fecha Lanzamiento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for song in upcoming_releases %}
-                                <tr>
-                                    <td>{{ song.name }}</td>
-                                    <td>{{ song.artists.name if song.artists }}</td>
-                                    <td>{{ song.albums.name if song.albums }}</td>
-                                    <td>{{ song.release_date }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text mb-0">Sin lanzamientos próximos 🔈</p>
-            {% endif %}
+        {% if upcoming_releases %}
+            <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Artista</th>
+                    <th>Álbum</th>
+                    <th>Fecha Lanzamiento</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for song in upcoming_releases %}
+                <tr>
+                    <td>{{ song.name }}</td>
+                    <td>{{ song.artists.name if song.artists }}</td>
+                    <td>{{ song.albums.name if song.albums }}</td>
+                    <td>{{ song.release_date }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <p class="text mb-0">Sin lanzamientos próximos 🔈</p>
+        {% endif %}
         </div>
     </div>
-   
+    </div>
+
     <!-- === RELEASED SONGS === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <strong>🎶 Canciones lanzadas</strong>
-        </div>
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseReleased" role="button" aria-expanded="true" aria-controls="collapseReleased">
+        <strong>🎶 Canciones lanzadas</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseReleased" class="collapse show">
         <div class="card-body">
-            {% if released_songs %}
-                <div class="row row-cols-1 row-cols-md-3 g-3">
-                    {% for song in released_songs %}
-                        <div class="col">
-                            <div class="card h-100 text-bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ song.name }}</h5>
-                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
-                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
-                                </div>
+        {% if released_songs %}
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for song in released_songs %}
+            <div class="col">
+                <div class="card h-100 text-bg-dark">
+                <div class="card-body">
+                    <h5 class="card-title">{{ song.name }}</h5>
+                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
+                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
+                </div>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p class="text mb-0">Aún no hay lanzamientos publicados 🚫</p>
+        {% endif %}
+        </div>
+    </div>
+    </div>
+
+    <!-- === ESTADÍSTICAS (COLLAPSIBLE) === -->
+    <div class="card bg-dark text-white shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>📊 Estadísticas</strong>
+            <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#statsSection" aria-expanded="false" aria-controls="statsSection">
+                Mostrar / Ocultar
+            </button>
+        </div>
+
+        <div class="collapse show" id="statsSection">
+            <div class="card-body">
+                <!-- === ANALÍTICAS === -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>🎧 Distribución por Estado</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="statusChart"></canvas>
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text mb-0">Aún no hay lanzamientos publicados 🚫</p>
-            {% endif %}
-        </div>
-    </div>
+                    </div>
 
-
-    <!-- === ANALÍTICAS === -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎧 Distribución por Estado</strong>
+                    <div class="col-md-6">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>🎼 Distribución por Género</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="genreChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="statusChart"></canvas>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>📅 Actividad</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>💿 Distribución por Álbum</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="albumChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎼 Distribución por Género</strong>
-                </div>
-                <div class="card-body">
-                    <canvas id="genreChart"></canvas>
-                </div>
-            </div>
-        </div>
     </div>
+
 
     <!-- === ACTIVIDAD RECIENTE === -->
     <div class="card bg-dark text-white shadow-sm mb-4">
@@ -496,10 +553,9 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: {{ status_labels|tojson }},
             datasets: [{
                 data: {{ status_counts|tojson }},
-                backgroundColor: [
-                    '#00BFFF', '#FFD700', '#FF4500', '#ADFF2F', '#8A2BE2', '#FF69B4'
-                ],
-                borderWidth: 0
+                backgroundColor: {{ status_colors|tojson }},
+                borderWidth: 0,
+                hoverOffset: 7
             }]
         },
         options: {
@@ -512,24 +568,61 @@ document.addEventListener("DOMContentLoaded", function() {
     // === Gráfico por Género ===
     const ctxGenre = document.getElementById("genreChart");
     new Chart(ctxGenre, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels: {{ genre_labels|tojson }},
             datasets: [{
                 label: 'Canciones por Género',
                 data: {{ genre_counts|tojson }},
-                backgroundColor: '#00BFFF',
-                borderRadius: 6
+                backgroundColor: {{ genre_color|tojson }},
+                borderRadius: 0,
+                hoverOffset: 7
             }]
         },
         options: {
-            scales: {
-                x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            },
             plugins: {
-                legend: { labels: { color: "#fff" } }
+                legend: { 
+                    labels: { color: "#fff" }
+                }
             }
+        }
+    });
+
+    const ctxActivity = document.getElementById('activityChart');
+    new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+            labels: {{ months|tojson }},
+            datasets: [{
+                label: 'Canciones terminadas este año',
+                data: {{ activity_counts|tojson }},
+                fill: true,
+                borderWidth: 2,
+                tension: 0.3,
+                backgroundColor: 'rgba(0, 255, 153, 0.2)',
+                borderColor: 'rgba(0, 255, 153, 1)',   
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    const ctxAlbum = document.getElementById('albumChart');
+    new Chart(ctxAlbum, {
+        type: 'bar',
+        data: {
+            labels: {{ album_labels|tojson }},
+            datasets: [{
+                label: 'Canciones por Álbum',
+                data: {{ album_counts|tojson }},
+                backgroundColor: {{ album_colors|tojson }},
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 });
