@@ -311,126 +311,142 @@ div[class*="card"] > .row {
 
     <!-- === UPCOMING DUE DATES === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-info text-white">
-            <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
-        </div>
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseDueDates" role="button" aria-expanded="true" aria-controls="collapseDueDates">
+        <strong>⚠️ Canciones próximas a vencer (7 días)</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseDueDates" class="collapse show">
         <div class="card-body">
-            {% if upcoming_due %}
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Artista</th>
-                                <th>Álbum</th>
-                                <th>Fecha de entrega</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for song in upcoming_due %}
-                                <tr>
-                                    <td>{{ song.name }}</td>
-                                    <td>{{ song.artists.name if song.artists }}</td>
-                                    <td>{{ song.albums.name if song.albums }}</td>
-                                    <td>{{ song.due_date }}</td>
-                                    <td>{{ song.song_statuses.name if song.song_statuses }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text mb-0">No hay canciones próximas a vencer 🎧</p>
-            {% endif %}
+        {% if upcoming_due %}
+            <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Artista</th>
+                    <th>Álbum</th>
+                    <th>Fecha de entrega</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for song in upcoming_due %}
+                <tr>
+                    <td>{{ song.name }}</td>
+                    <td>{{ song.artists.name if song.artists }}</td>
+                    <td>{{ song.albums.name if song.albums }}</td>
+                    <td>{{ song.due_date }}</td>
+                    <td>{{ song.song_statuses.name if song.song_statuses }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <p class="text mb-0">No hay canciones próximas a vencer 🎧</p>
+        {% endif %}
         </div>
+    </div>
     </div>
 
     <!-- === CANCIONES RETRASADAS === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-danger text-white">
-            <strong>🚫 Canciones retrasadas</strong>
-        </div>
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseOverdue" role="button" aria-expanded="true" aria-controls="collapseOverdue">
+        <strong>🚫 Canciones retrasadas</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseOverdue" class="collapse show">
         <div class="card-body">
-            {% if overdue_songs %}
-                <div class="row row-cols-1 row-cols-md-3 g-3">
-                    {% for song in overdue_songs %}
-                        <div class="col">
-                            <div class="card h-100 text-bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ song.name }}</h5>
-                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
-                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+        {% if overdue_songs %}
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for song in overdue_songs %}
+            <div class="col">
+                <div class="card h-100 text-bg-dark">
+                <div class="card-body">
+                    <h5 class="card-title">{{ song.name }}</h5>
+                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
+                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
                 </div>
-            {% else %}
-                <p class="text mb-0">Aún no hay canciones retrasadas 🚫</p>
-            {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p class="text mb-0">Aún no hay canciones retrasadas 🚫</p>
+        {% endif %}
         </div>
+    </div>
     </div>
 
     <!-- === UPCOMING RELEASES === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <strong>🚀 Próximos lanzamientos</strong>
-        </div>
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseReleases" role="button" aria-expanded="true" aria-controls="collapseReleases">
+        <strong>🚀 Próximos lanzamientos</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseReleases" class="collapse show">
         <div class="card-body">
-            {% if upcoming_releases %}
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Artista</th>
-                                <th>Álbum</th>
-                                <th>Fecha Lanzamiento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for song in upcoming_releases %}
-                                <tr>
-                                    <td>{{ song.name }}</td>
-                                    <td>{{ song.artists.name if song.artists }}</td>
-                                    <td>{{ song.albums.name if song.albums }}</td>
-                                    <td>{{ song.release_date }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text mb-0">Sin lanzamientos próximos 🔈</p>
-            {% endif %}
+        {% if upcoming_releases %}
+            <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Artista</th>
+                    <th>Álbum</th>
+                    <th>Fecha Lanzamiento</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for song in upcoming_releases %}
+                <tr>
+                    <td>{{ song.name }}</td>
+                    <td>{{ song.artists.name if song.artists }}</td>
+                    <td>{{ song.albums.name if song.albums }}</td>
+                    <td>{{ song.release_date }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        {% else %}
+            <p class="text mb-0">Sin lanzamientos próximos 🔈</p>
+        {% endif %}
         </div>
     </div>
-   
+    </div>
+
     <!-- === RELEASED SONGS === -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <strong>🎶 Canciones lanzadas</strong>
-        </div>
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center"
+        data-bs-toggle="collapse" data-bs-target="#collapseReleased" role="button" aria-expanded="true" aria-controls="collapseReleased">
+        <strong>🎶 Canciones lanzadas</strong>
+        <span class="ms-auto"><i class="bi bi-chevron-down"></i></span>
+    </div>
+    <div id="collapseReleased" class="collapse show">
         <div class="card-body">
-            {% if released_songs %}
-                <div class="row row-cols-1 row-cols-md-3 g-3">
-                    {% for song in released_songs %}
-                        <div class="col">
-                            <div class="card h-100 text-bg-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ song.name }}</h5>
-                                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
-                                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+        {% if released_songs %}
+            <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for song in released_songs %}
+            <div class="col">
+                <div class="card h-100 text-bg-dark">
+                <div class="card-body">
+                    <h5 class="card-title">{{ song.name }}</h5>
+                    <p class="card-text text mb-1">{{ song.artists.name if song.artists }}</p>
+                    <p class="card-text"><small>📅 {{ song.release_date }}</small></p>
                 </div>
-            {% else %}
-                <p class="text mb-0">Aún no hay lanzamientos publicados 🚫</p>
-            {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p class="text mb-0">Aún no hay lanzamientos publicados 🚫</p>
+        {% endif %}
         </div>
+    </div>
     </div>
 
     <!-- === ESTADÍSTICAS (COLLAPSIBLE) === -->
@@ -538,7 +554,8 @@ document.addEventListener("DOMContentLoaded", function() {
             datasets: [{
                 data: {{ status_counts|tojson }},
                 backgroundColor: {{ status_colors|tojson }},
-                borderWidth: 0
+                borderWidth: 0,
+                hoverOffset: 7
             }]
         },
         options: {
@@ -558,12 +575,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 label: 'Canciones por Género',
                 data: {{ genre_counts|tojson }},
                 backgroundColor: {{ genre_color|tojson }},
-                borderRadius: 0
+                borderRadius: 0,
+                hoverOffset: 7
             }]
         },
         options: {
             plugins: {
-                legend: { labels: { color: "#fff" } }
+                legend: { 
+                    labels: { color: "#fff" }
+                }
             }
         }
     });
@@ -578,7 +598,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 data: {{ activity_counts|tojson }},
                 fill: true,
                 borderWidth: 2,
-                tension: 0.3
+                tension: 0.3,
+                backgroundColor: 'rgba(0, 255, 153, 0.2)',
+                borderColor: 'rgba(0, 255, 153, 1)',   
             }]
         },
         options: {
