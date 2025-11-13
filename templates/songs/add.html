@@ -13,7 +13,7 @@
   </div>
   <div class="col-md-6">
     <label class="form-label">Género</label>
-    <select name="genre_id" class="form-select ts-select" data-ts-type="genre">
+    <select name="genre" class="form-select ts-select" data-ts-type="genre">
       <option value="">(ninguno)</option>
       {% for g in genres %}
       <option value="{{ g.id }}">{{ g.name }}</option>
@@ -22,7 +22,7 @@
   </div>
   <div class="col-md-6">
     <label class="form-label">Estado</label>
-    <select name="status_id" class="form-select">
+    <select name="status" class="form-select">
       {% for s in song_statuses %}
       <option value="{{ s.id }}">{{ s.name }}</option>
       {% endfor %}
