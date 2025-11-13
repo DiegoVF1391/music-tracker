@@ -34,11 +34,20 @@ def dashboard():
     ).order("due_date", desc=False).execute()
 
     # === 2. Próximos lanzamientos ===
-    upcoming_releases = supabase.table("songs").select(
-        "*, artists(name), albums(name)"
-    ).in_("status", [9, 10]
-    ).gte("release_date", today.isoformat()
-    ).order("release_date", desc=False).execute()
+    today = date.today()
+    start_of_year = date(today.year, 1, 1)
+    end_of_year = date(today.year, 12, 31)
+
+    upcoming_releases = (
+        supabase.table("songs")
+        .select("*, artists(name), albums(name)")
+        .in_("status", [9, 10])
+        .gte("release_date", today.isoformat())  # fecha igual o posterior a hoy
+        .gte("release_date", start_of_year.isoformat())  # dentro del año actual
+        .lte("release_date", end_of_year.isoformat())
+        .order("release_date", desc=False)
+        .execute()
+    )
 
     # === 3. Retrasados ===
     overdue_songs = supabase.table("songs").select(
@@ -58,11 +67,6 @@ def dashboard():
     total_songs = supabase.table("songs").select("id", count="exact").execute().count
     completed_songs = supabase.table("songs").select("id", count="exact").in_("status", [9, 10]).execute().count
     progress_percentage = round((completed_songs / total_songs) * 100, 1) if total_songs > 0 else 0
-
-    # === 6. Tasa de finalización del último mes ===
-    """last_month = date.today() - timedelta(days=30)
-    recently_completed_songs = supabase.table("songs").select("id", count="exact").in_("status", [9, 10]).gte("updated_at", last_month.isoformat()).execute().count
-    monthly_completion_rate = recently_completed_songs"""
 
     # === 7. Distribución de status ===
     statuses = supabase.table("song_statuses").select("id, name, color").execute().data
@@ -141,7 +145,6 @@ def dashboard():
         status_colors=status_colors,
         album_colors=album_colors,
         genre_counts=genre_counts,
-        monthly_completion_rate=monthly_completion_rate,
         favorite_songs=favorite_songs,
         abandoned_songs=abandoned_songs,
         avg_rating=avg_rating,

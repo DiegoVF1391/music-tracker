@@ -433,53 +433,66 @@ div[class*="card"] > .row {
         </div>
     </div>
 
+    <!-- === ESTADÍSTICAS (COLLAPSIBLE) === -->
+    <div class="card bg-dark text-white shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>📊 Estadísticas</strong>
+            <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#statsSection" aria-expanded="false" aria-controls="statsSection">
+                Mostrar / Ocultar
+            </button>
+        </div>
 
-    <!-- === ANALÍTICAS === -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎧 Distribución por Estado</strong>
-                </div>
-                <div class="card-body">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎼 Distribución por Género</strong>
-                </div>
-                <div class="card-body">
-                    <canvas id="genreChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="collapse show" id="statsSection">
+            <div class="card-body">
+                <!-- === ANALÍTICAS === -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>🎧 Distribución por Estado</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-12">
-            <!-- Actividad anual -->
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎼 Actividad</strong>
+                    <div class="col-md-6">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>🎼 Distribución por Género</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="genreChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <canvas id="activityChart"></canvas>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>📅 Actividad</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="row g-4 mb-4">
-        <div class="col-md-12">
-            <!-- Canciones por álbum -->
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header">
-                    <strong>🎧 Distribución por Album</strong>
-                </div>
-                <div class="card-body">
-                    <canvas id="albumChart"></canvas>
+
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <div class="card bg-dark text-white shadow-sm">
+                            <div class="card-header">
+                                <strong>💿 Distribución por Álbum</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="albumChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
